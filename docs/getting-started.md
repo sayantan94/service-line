@@ -9,6 +9,18 @@ permalink: /docs/getting-started/
 
 [Open the mock UI](../service-line-ui.html). You can also clone the repository and
 open `service-line-ui.html` directly. No installation or credentials are needed.
+Keep the checkout's `assets/` directory beside the HTML.
+
+## Inspect the factory
+
+The opening view shows one floor per service and one workstation per workflow
+stage. Select a service floor, then a workstation or work item. The inspector
+opens its plan, checks, or session. Select **Line** for the board view or
+**Services** for the service directory.
+
+Workers and status indicators represent sample work items. Animation is a visual
+cue, not a heartbeat or proof that an executor is connected. The overview and
+board use the same state; neither advances work automatically.
 
 ## Follow a work item
 
@@ -36,7 +48,7 @@ manual fields in this preview.
 
 | Available | Proposed runtime work |
 |---|---|
-| Service picker and factory line | Filesystem instances and isolated checkouts |
+| Service picker, spatial factory, and line view | Filesystem instances and isolated checkouts |
 | Editable plans and simulated approval gates | Durable approval records and resumable state |
 | Session and lesson views | Codex and Claude adapters with persistent sessions |
 | Illustrative checks and evidence | Commands, browser execution, backend replay, artifact capture |

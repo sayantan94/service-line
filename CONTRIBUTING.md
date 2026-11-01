@@ -5,7 +5,8 @@ Keep claims about implemented behavior separate from the proposed runtime.
 
 ## Edit
 
-- `service-line-ui.html`: standalone UI, styles, and sample state.
+- `service-line-ui.html`: UI shell, shared styles, and sample state.
+- `assets/factory-floor.*`: spatial overview of the same sample state.
 - `service-line.html`: standalone architecture document.
 - `docs/*.md`: documentation served by GitHub Pages and readable on GitHub.
 - `_layouts/docs.html` and `docs/assets/docs.css`: documentation layout and styling.

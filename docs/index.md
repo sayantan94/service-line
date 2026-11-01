@@ -18,13 +18,14 @@ the work, requires evidence, and retains useful context locally.
 
 <ol class="flow"><li>Intake</li><li>Plan</li><li>Approval</li><li>Implement</li><li>Verify</li><li>Ready</li></ol>
 
-Select a service, then follow its work items through the line. Open an item to
+Each service has a floor in the spatial Factory view. Select a workstation to
+inspect its work, or switch to the line to follow each stage. Open an item to
 review its plan, sessions, changes, and evidence. A failed check returns it to
 repair. Missing evidence stops progress. Ready means ready for review.
 
 [Open the mock UI](../service-line-ui.html)
 
-![The factory line in the interactive prototype](assets/factory-line.png)
+![The stage-by-stage board in the interactive prototype](assets/factory-line.png)
 
 ## Start with the model
 

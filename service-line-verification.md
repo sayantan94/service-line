@@ -15,13 +15,14 @@ of AppliedIn or another product.
 - No server, credentials, network, or production data are required.
 - Browser automation may use an available browser tool or Playwright installation.
   Do not add a dependency merely to mirror an implementation detail.
-- Record hashes of both HTML files and this guide with the verification attempt.
+- Record hashes of both HTML files, `assets/factory-floor.js`, `assets/factory-floor.css`, and this guide with the verification attempt.
 
 ## Browser flows
 
 ### FLOW-001 — service selection and isolation
 
-1. Open the page. Assert the Services home shows AppliedIn, Service Line, and Website.
+1. Open the page. Assert Factory shows AppliedIn, Service Line, and Website floors.
+   Open Services and assert the same three services appear in the directory.
 2. Open AppliedIn. Assert the factory has Intake, Plan, Approval, Implement, Verify,
    and Ready stages, with work items in their current stages.
 3. Open a work item and change its executor before approval.
@@ -85,6 +86,24 @@ of AppliedIn or another product.
   navigation, mock UI links, workflow example, verification-guide links, and screenshots.
   Check docs at desktop and mobile widths; all text and tables must remain readable.
 
+### FLOW-006 — spatial factory
+
+1. Reset. Assert Factory is the opening view and the counters match the sample
+   work: one running item, two needing attention, and one ready for review.
+2. Select AppliedIn's Implement workstation. Assert WI-041 and Claude appear in
+   the inspector. Open Session and verify the implementation context belongs to it.
+3. Return to Factory. Select Service Line, then Website. Assert each floor and its
+   inspector show only that service's work; Website shows an empty state.
+4. Switch services with the top selector while on Factory. Assert it remains the
+   spatial view. Select Line and confirm the same service and work selection.
+5. Approve WI-042 through its plan. Return to Factory and advance the sample
+   through failed checks, repair, and Ready. Assert the workstation and counters
+   reflect each transition; selecting a station never approves or advances work.
+6. Exercise stations and floor controls using the keyboard. Empty stations explain
+   that they contain no work. Multiple items at one station can be cycled.
+7. Create a service and work item, then return to Factory. Assert its floor and work
+   appear. Reset removes them. Check desktop and mobile layouts and reduced motion.
+
 ## Traffic replay and observations
 
 Backend replay is **not applicable to this static prototype**. It has no backend
@@ -93,7 +112,7 @@ or traffic fixtures. Do not describe simulated check output as replay evidence.
 Required observations:
 
 - Browser actions and resulting visible state for the flows above.
-- Screenshots of Services, Factory line, work-item evidence, and mobile layout.
+- Screenshots of Services, Factory, Factory line, work-item evidence, and mobile layout.
 - JavaScript page errors: none.
 - Network requests: no unexpected external requests or remote side effects.
 - State: verify service separation, current plan/revision gates, and retained attempt history.

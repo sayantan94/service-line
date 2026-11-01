@@ -13,7 +13,7 @@ The mock UI uses sample data and resets on reload.
 [Documentation](https://sayantan94.github.io/service-line/docs/) ·
 [Try the mock UI](https://sayantan94.github.io/service-line/service-line-ui.html)
 
-![Service Line factory view with work moving through six stages](docs/assets/factory-line.png)
+![Service Line stage-by-stage board](docs/assets/factory-line.png)
 
 ## How it works
 
@@ -51,8 +51,12 @@ engine checks the evidence against the approved plan and current code snapshot.
 
 ## Try locally
 
-Open `service-line-ui.html` in a browser. No installation or account is required.
+Open `service-line-ui.html` in a browser from this checkout. No installation or account is required.
 `service-line.html` is the standalone architecture document.
+
+The **Factory** view gives each service a floor. Select a workstation or work item
+to inspect its state, open its session, or review its checks. **Line** opens the
+same service as a stage-by-stage board. Both views share the same sample state.
 
 Select **AppliedIn**, open **WI-042**, approve the sample plan, and use
 **Next sample step** to follow a failed check through repair. Try **Missing
@@ -65,6 +69,8 @@ It uses a bundled example; it does not read arbitrary folders or call Claude.
 
 ```text
 docs/                              Documentation and mock UI screenshots
+assets/factory-floor.css            Spatial view styles
+assets/factory-floor.js             Spatial view of the shared sample state
 workflows/software-change.asl.json  Proposed workflow; no runtime included
 templates/                         Per-service verification template
 service-line-ui.html               Interactive mock UI
@@ -73,5 +79,5 @@ service-line-verification.md       Verification contract for this prototype
 ```
 
 GitHub Pages builds the Markdown documentation with the layout in `_layouts/`.
-The two HTML previews are standalone files. See [Contributing](CONTRIBUTING.md)
-for editing and verification.
+The UI loads its spatial view from `assets/`; keep that directory beside the HTML
+when opening it locally. See [Contributing](CONTRIBUTING.md) for editing and verification.
