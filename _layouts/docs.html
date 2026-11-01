@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{{ page.title }} · Service Line</title>
+  <meta name="description" content="{{ page.description | default: site.description | escape }}">
+  <link rel="stylesheet" href="{{ '/docs/assets/docs.css' | relative_url }}">
+</head>
+<body>
+  <a class="skip" href="#content">Skip to content</a>
+  <header><a class="brand" href="{{ '/docs/' | relative_url }}"><span>SL</span>Service Line</a><nav aria-label="Project"><a href="{{ '/service-line-ui.html' | relative_url }}">Mock UI ↗</a><a href="https://github.com/sayantan94/service-line">GitHub ↗</a></nav></header>
+  <div class="shell">
+    <aside><nav aria-label="Documentation"><p>Documentation</p>
+      <a href="{{ '/docs/' | relative_url }}" {% if page.section == 'overview' %}aria-current="page"{% endif %}>Overview</a>
+      <a href="{{ '/docs/primitives/' | relative_url }}" {% if page.section == 'primitives' %}aria-current="page"{% endif %}>Primitives</a>
+      <a href="{{ '/docs/workflow/' | relative_url }}" {% if page.section == 'workflow' %}aria-current="page"{% endif %}>Workflow</a>
+      <a href="{{ '/docs/verification/' | relative_url }}" {% if page.section == 'verification' %}aria-current="page"{% endif %}>Verification</a>
+      <a href="{{ '/docs/context-and-learning/' | relative_url }}" {% if page.section == 'context' %}aria-current="page"{% endif %}>Context & learning</a>
+      <a href="{{ '/docs/getting-started/' | relative_url }}" {% if page.section == 'start' %}aria-current="page"{% endif %}>Try the prototype</a>
+    </nav><div class="sidebar-note">Design prototype<br>No executor is connected.</div></aside>
+    <main id="content"><div class="eyebrow">Service Line / {{ page.title }}</div>{{ content }}<footer><a href="https://github.com/sayantan94/service-line/blob/main/{{ page.path }}">View source on GitHub ↗</a><span>Architecture proposal</span></footer></main>
+  </div>
+</body>
+</html>

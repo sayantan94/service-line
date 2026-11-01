@@ -1,0 +1,109 @@
+{
+  "Comment": "Proposed Service Line workflow. Custom resources require an unimplemented runtime; this file is not an executable integration.",
+  "StartAt": "Initialize",
+  "States": {
+    "Initialize": {
+      "Type": "Pass",
+      "Result": 0,
+      "ResultPath": "$.repairs",
+      "Next": "Plan"
+    },
+    "Plan": {
+      "Type": "Task",
+      "Resource": "service-line:agent.plan",
+      "ResultPath": "$.plan",
+      "Next": "AwaitApproval"
+    },
+    "AwaitApproval": {
+      "Type": "Task",
+      "Resource": "service-line:approval.wait",
+      "ResultPath": "$.approval",
+      "Next": "ApprovalDecision"
+    },
+    "ApprovalDecision": {
+      "Type": "Choice",
+      "Choices": [
+        {
+          "Variable": "$.approval.decision",
+          "StringEquals": "approved",
+          "Next": "Implement"
+        },
+        {
+          "Variable": "$.approval.decision",
+          "StringEquals": "revise",
+          "Next": "Plan"
+        }
+      ],
+      "Default": "Cancelled"
+    },
+    "Implement": {
+      "Type": "Task",
+      "Resource": "service-line:agent.implement",
+      "ResultPath": "$.implementation",
+      "TimeoutSeconds": 1800,
+      "Next": "RunChecks"
+    },
+    "RunChecks": {
+      "Type": "Task",
+      "Resource": "service-line:checks.run",
+      "ResultPath": "$.checks",
+      "Next": "Review"
+    },
+    "Review": {
+      "Type": "Task",
+      "Resource": "service-line:agent.verify",
+      "ResultPath": "$.review",
+      "Next": "Evaluate"
+    },
+    "Evaluate": {
+      "Type": "Task",
+      "Resource": "service-line:verification.evaluate",
+      "ResultPath": "$.verification",
+      "Next": "Route"
+    },
+    "Route": {
+      "Type": "Choice",
+      "Choices": [
+        {
+          "Variable": "$.verification.verdict",
+          "StringEquals": "passed",
+          "Next": "Ready"
+        },
+        {
+          "And": [
+            {
+              "Variable": "$.verification.verdict",
+              "StringEquals": "failed"
+            },
+            {
+              "Variable": "$.repairs",
+              "NumericLessThan": 2
+            }
+          ],
+          "Next": "Repair"
+        }
+      ],
+      "Default": "NeedsAttention"
+    },
+    "Repair": {
+      "Type": "Task",
+      "Resource": "service-line:repair.run",
+      "ResultPath": "$",
+      "TimeoutSeconds": 1800,
+      "Next": "RunChecks"
+    },
+    "Ready": {
+      "Type": "Succeed"
+    },
+    "NeedsAttention": {
+      "Type": "Fail",
+      "Error": "VerificationNeedsAttention",
+      "Cause": "Required evidence is missing, inconclusive, or the repair limit is reached."
+    },
+    "Cancelled": {
+      "Type": "Fail",
+      "Error": "PlanNotApproved",
+      "Cause": "Implementation requires an approved plan."
+    }
+  }
+}

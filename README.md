@@ -1,0 +1,77 @@
+# Service Line
+
+A software factory for bugs, features, refactors, and maintenance.
+
+Choose an executor, approve a plan, and follow the work through implementation,
+verification, and repair. Each service keeps its own work items, session context,
+and reviewed lessons.
+
+**Status:** interactive UI prototype and architecture proposal. Executor adapters,
+the workflow engine, durable storage, and real verification are not implemented.
+The mock UI uses sample data and resets on reload.
+
+[Documentation](https://sayantan94.github.io/service-line/docs/) ·
+[Try the mock UI](https://sayantan94.github.io/service-line/service-line-ui.html)
+
+![Service Line factory view with work moving through six stages](docs/assets/factory-line.png)
+
+## How it works
+
+**Intake → Plan → Human approval → Implement → Verify → Ready**
+
+The customer selects Codex or Claude. Approval binds the plan and required checks.
+Failed checks return to bounded repair; missing evidence stops progress. Ready
+means the change has evidence for review, not that it has been merged or deployed.
+
+## Six primitives
+
+| Primitive | Responsibility |
+|---|---|
+| **Instance** | One service's repository, working folder, defaults, and local lessons. |
+| **Work item** | One requested outcome, its criteria, plan, approval, sessions, and runs. |
+| **Workflow** | A versioned ASL-style definition of states, transitions, and limits. |
+| **Executor** | The customer's chosen coding-agent adapter: Codex or Claude. |
+| **Session** | A persistent agent conversation with its own `context.md` and history. |
+| **Run** | One workflow execution, including its checkout, state, checks, and evidence. |
+
+[Primitive definitions and ownership](docs/primitives.md) ·
+[Workflow contract](docs/workflow.md) ·
+[Verification](docs/verification.md) ·
+[Context and learning](docs/context-and-learning.md)
+
+## Verification
+
+Every service owns a versioned `service-line-verification.md`. It specifies startup
+and reset, test commands, browser actions, traffic replay, expected outcomes, and
+required observations. A separate verification session follows this guide; the
+engine checks the evidence against the approved plan and current code snapshot.
+
+[Template for a service](templates/service-line-verification.md) ·
+[This prototype's guide](service-line-verification.md)
+
+## Try locally
+
+Open `service-line-ui.html` in a browser. No installation or account is required.
+`service-line.html` is the standalone architecture document.
+
+Select **AppliedIn**, open **WI-042**, approve the sample plan, and use
+**Next sample step** to follow a failed check through repair. Try **Missing
+evidence** to see the gate block progress. **Reset** restores the examples.
+
+The New service form demonstrates Claude drafting a description and test command.
+It uses a bundled example; it does not read arbitrary folders or call Claude.
+
+## Repository
+
+```text
+docs/                              Documentation and mock UI screenshots
+workflows/software-change.asl.json  Proposed workflow; no runtime included
+templates/                         Per-service verification template
+service-line-ui.html               Interactive mock UI
+service-line.html                  Standalone architecture document
+service-line-verification.md       Verification contract for this prototype
+```
+
+GitHub Pages builds the Markdown documentation with the layout in `_layouts/`.
+The two HTML previews are standalone files. See [Contributing](CONTRIBUTING.md)
+for editing and verification.

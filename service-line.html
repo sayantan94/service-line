@@ -1,0 +1,291 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Service Line architecture: customer-selected executors, human-approved plans, persistent sessions, and local learning.">
+  <meta name="theme-color" content="#ffffff">
+  <title>Service Line — Architecture</title>
+  <style>
+    :root{color-scheme:light;--text:#202123;--secondary:#64666b;--border:#e5e5e5;--surface:#f7f7f8;--mono:ui-monospace,SFMono-Regular,Consolas,monospace}
+    *{box-sizing:border-box}
+    body{margin:0;color:var(--text);background:#fff;font:16px/1.65 -apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif;-webkit-font-smoothing:antialiased}
+    main,header,footer{width:min(900px,calc(100% - 48px));margin-inline:auto}
+    header{display:flex;justify-content:space-between;align-items:center;padding:28px 0;border-bottom:1px solid var(--border);font-size:13px}
+    header a{font-weight:600;text-decoration:none}
+    .document-status{color:var(--secondary);font-size:12px}
+    a{color:inherit;text-underline-offset:3px}
+    a:hover{text-decoration-thickness:2px}
+    a:focus-visible,summary:focus-visible{outline:2px solid var(--text);outline-offset:5px}
+    main{padding:54px 0 24px}
+    h1{margin:0 0 12px;font-size:48px;line-height:1.15;font-weight:600;letter-spacing:-1.8px}
+    .subtitle{margin:0 0 24px;color:var(--secondary);font-size:22px;line-height:1.4;letter-spacing:-.35px}
+    p{margin:0 0 16px;max-width:78ch}
+    .intro{max-width:780px;font-size:17px}
+    section{margin-top:42px}
+    h2{margin:0 0 16px;font-size:21px;font-weight:600;line-height:1.35;letter-spacing:-.4px}
+    strong{font-weight:600}
+    code{font-family:var(--mono);font-size:.86em;background:var(--surface);padding:2px 4px;border-radius:3px;overflow-wrap:anywhere}
+    figure{margin:20px 0 0}
+    .flow{list-style:none;display:grid;grid-template-columns:repeat(6,1fr);gap:24px;padding:0;margin:0}
+    .flow li{position:relative;padding:17px 10px;text-align:center;background:var(--surface);border:1px solid var(--border);border-radius:4px;font-size:13px;line-height:1.45}
+    .flow li strong{display:block}
+    .flow li span{display:block;font-size:11px;color:var(--secondary);margin-top:4px}
+    .flow li:not(:last-child)::after{content:'→';position:absolute;right:-20px;top:28px;color:var(--secondary);font-size:15px}
+    .repair{margin:14px 0 0;padding:11px 16px;border-left:2px solid #b5b6b8;background:#fafafa;font-size:12px;color:var(--secondary)}
+    figcaption{margin-top:13px;color:var(--secondary);font-size:12px}
+    .table-wrap{overflow-x:auto}
+    table{width:100%;border-collapse:collapse;text-align:left;font-size:14px}
+    th,td{padding:12px 16px 12px 0;border-bottom:1px solid var(--border);vertical-align:top}
+    th{font-weight:600;color:var(--secondary);font-size:12px}
+    td:first-child{width:150px;font-weight:600;white-space:nowrap}
+    td:last-child,th:last-child{padding-right:0}
+    .note{margin:16px 0 0;font-size:13px;color:var(--secondary)}
+    pre{margin:18px 0 0;padding:22px 24px;border:1px solid var(--border);border-radius:4px;background:var(--surface);font:12px/1.9 var(--mono);overflow:auto;tab-size:2}
+    pre code{padding:0;background:none;font-size:inherit;overflow-wrap:normal}
+    .rules{padding-left:20px;margin:0;max-width:78ch}
+    .rules li{padding-left:3px;margin:8px 0;font-size:14px}
+    details{margin-top:22px;border-top:1px solid var(--border);border-bottom:1px solid var(--border);padding:15px 0}
+    summary{cursor:pointer;font-size:14px;font-weight:600;list-style-position:outside;margin-left:17px}
+    details p{font-size:13px;margin-top:14px;color:var(--secondary)}
+    details pre{margin-bottom:8px}
+    footer{padding:24px 0 35px;border-top:1px solid var(--border);font-size:12px;color:var(--secondary)}
+    footer p{margin:0}
+    footer a{white-space:nowrap}
+    @media(max-width:620px){
+      main,header,footer{width:calc(100% - 36px)}
+      header{padding:21px 0}
+      main{padding-top:36px}
+      h1{font-size:40px;letter-spacing:-1.2px}
+      .subtitle{font-size:20px}
+      .intro{font-size:16px}
+      section{margin-top:34px}
+      h2{font-size:20px}
+      .flow{grid-template-columns:1fr;gap:22px}
+      .flow li{padding:12px 16px;text-align:left;display:flex;align-items:center;justify-content:space-between;gap:16px}
+      .flow li span{margin-top:0}
+      .flow li:not(:last-child)::after{content:'↓';left:18px;right:auto;top:auto;bottom:-22px}
+      td:first-child{width:105px;white-space:normal}
+      th,td{padding-top:12px;padding-bottom:12px;font-size:13px}
+      th{font-size:12px}
+      pre{padding:17px;font-size:11px}
+      .document-status{font-size:11px}
+    }
+    @media print{
+      @page{margin:17mm}
+      body{font-size:11px;line-height:1.55}
+      main,header,footer{width:100%}
+      header{padding:0 0 12px}
+      main{padding:24px 0 16px}
+      h1{font-size:34px}
+      .subtitle{font-size:17px}
+      .intro{font-size:12px}
+      section{margin-top:25px}
+      h2{font-size:16px;margin-bottom:10px;break-after:avoid}
+      table{font-size:10px}
+      th,td{padding:8px 12px 8px 0}
+      tr,figure,pre{break-inside:avoid}
+      .flow{gap:18px}
+      .flow li{font-size:10px;padding:12px 6px}
+      .flow li span{font-size:8px}
+      .flow li:not(:last-child)::after{right:-16px;top:21px}
+      .rules li,.note,.repair{font-size:10px}
+      figcaption,footer{font-size:9px}
+      pre{font-size:9px;padding:14px}
+      a{text-decoration:none}
+    }
+  </style>
+</head>
+<body>
+  <header><a href="#overview">Service Line</a><span class="document-status">Architecture proposal · November 2026</span></header>
+  <main id="overview">
+    <h1>Service Line</h1>
+    <p class="subtitle">A workflow engine for software development.</p>
+    <p class="intro">The customer chooses the executor—Codex or Claude—and approves the plan. Service Line executes the work, verifies the result, and retains context and lessons locally.</p>
+    <p>It supports bug fixes, features, refactors, maintenance, and new products. AppliedIn is one Service Line instance; each requested change is a work item within it.</p>
+
+    <section aria-labelledby="execution-heading">
+      <h2 id="execution-heading">How it works</h2>
+      <figure aria-label="A work item is planned, approved by a human, implemented by the selected executor, verified, and returned for review. Failed checks trigger bounded repairs. Lessons inform future plans.">
+        <ol class="flow">
+          <li><strong>Work item</strong><span>Goal and criteria</span></li>
+          <li><strong>Plan</strong><span>Proposed approach</span></li>
+          <li><strong>Approve</strong><span>Human decision</span></li>
+          <li><strong>Implement</strong><span>Selected executor</span></li>
+          <li><strong>Verify</strong><span>Test and review</span></li>
+          <li><strong>Result</strong><span>Changes and evidence</span></li>
+        </ol>
+        <p class="repair">Failed check → repair in the same implementation session → check again. Stop when the repair limit is reached.</p>
+        <figcaption>Reviewed outcomes → local lessons → better-informed plans for subsequent work items.</figcaption>
+      </figure>
+      <p style="margin-top:20px">The instance sets an executor default; the customer can override it per work item. Agent tasks use that selection. Test and build commands run directly in the workspace.</p>
+      <p>A human reviews the scope, approach, and acceptance criteria before implementation. Approval is tied to a plan version. Scope changes require renewed approval; repairs within the approved scope follow the workflow.</p>
+    </section>
+
+    <section aria-labelledby="primitives-heading">
+      <h2 id="primitives-heading">Primitives</h2>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th scope="col">Primitive</th><th scope="col">Definition</th></tr></thead>
+          <tbody>
+            <tr><td>Instance</td><td>One product’s working folder, repository reference, executor defaults, work items, and local lessons. Example: AppliedIn.</td></tr>
+            <tr><td>Work item</td><td>One requested outcome. Holds acceptance criteria, the versioned plan and required checks, human approval, runs, and sessions.</td></tr>
+            <tr><td>Workflow</td><td>A reusable ASL-style definition of planning, approval, implementation, verification, and repair. Defines transitions and limits.</td></tr>
+            <tr><td>Executor</td><td>The customer-selected coding-agent adapter: Codex or Claude. Handles agent invocation, native sessions, and results.</td></tr>
+            <tr><td>Session</td><td>A work item’s persistent agent conversation. Owns its executor reference, <code>context.md</code>, and history; can continue across runs.</td></tr>
+            <tr><td>Run</td><td>One execution of a workflow version for a work item. Tracks the working checkout, steps, retries, checks, outputs, and errors.</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="note">States and actions belong to the workflow. Checkouts, checks, and artifacts belong to the run. Each session belongs to one work item and one executor. Skills are reusable instructions attached to workflow tasks.</p>
+    </section>
+
+    <section aria-labelledby="context-heading">
+      <h2 id="context-heading">Persistent context</h2>
+      <p>Each session’s <code>context.md</code> records decisions, progress, evidence, blockers, and next steps. Service Line loads it on continuation and checkpoints completed turns. Implementation and review use separate sessions.</p>
+      <pre aria-label="Example instance directory"><code>appliedin/
+├── instance.yaml
+├── learning/lessons.md           # Reusable, instance-scoped lessons
+└── workitems/WI-001/
+    ├── workitem.md
+    ├── plan.md                  # Versioned plan
+    ├── approval.json            # Human decision and plan version
+    ├── workspace/
+    ├── runs/run-001/             # Workflow snapshot, state, artifacts
+    └── sessions/implementation/
+        ├── session.json         # Executor and native session reference
+        ├── context.md           # Working memory
+        └── history.jsonl        # Recorded activity</code></pre>
+      <p class="note">Workflow progress is structured runtime state. Markdown provides agent context. Resumption checks the current workspace against the last recorded checkpoint.</p>
+    </section>
+
+    <section aria-labelledby="learning-heading">
+      <h2 id="learning-heading">Local learning</h2>
+      <p>Fixes, failed attempts, and customer corrections produce candidate lessons. Validate them against checks or human review, then store them locally with their source and scope. Future planning retrieves relevant lessons. The customer can inspect, edit, or disable them.</p>
+      <p class="note">Session context describes current work. Instance lessons inform future work. Learning cannot bypass approval or silently change an active workflow.</p>
+    </section>
+
+    <section aria-labelledby="onboarding-heading">
+      <h2 id="onboarding-heading">Add a service</h2>
+      <p>Select a repository. Claude reads its README, project instructions, and test configuration to draft the description and test command. Review or edit both before creating the service. Repository inspection does not execute its commands. The customer chooses the executor for subsequent work.</p>
+    </section>
+
+    <section aria-labelledby="verification-heading" id="verification">
+      <h2 id="verification-heading">Verification</h2>
+      <p>Each product owns a versioned <code>service-line-verification.md</code>. It defines startup, fixtures, browser flows, traffic replay, assertions, and required observations. The shared <code>verify</code> skill follows this guide; each approved plan pins its revision and adds change-specific checks.</p>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th scope="col">Part</th><th scope="col">Responsibility</th></tr></thead>
+          <tbody>
+            <tr><td>Check runner</td><td>Runs the approved commands on an isolated checkout. Records output, exit codes, test reports, and the exact revision.</td></tr>
+            <tr><td>Verification session</td><td>Uses the customer’s executor and the <code>verify</code> skill in a separate session. Exercises the test environment, reviews the diff and evidence, and leaves implementation files unchanged.</td></tr>
+            <tr><td>Workflow engine</td><td>Validates evidence and decides the next state. Required checks and reviews must all pass. An agent’s completion message cannot satisfy the gate.</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="note">A failure returns to implementation for bounded repair. Missing evidence, unavailable tools, or an inconclusive review require investigation. Any code change invalidates prior verification. Scope or acceptance changes require renewed plan approval.</p>
+      <details>
+        <summary>Browser actions, traffic replay, and observation</summary>
+        <p>The guide specifies customer flows: click, type, submit, reload, and assert the visible and persisted result. Capture an action trace, screenshots at assertions, network requests and responses, and console errors.</p>
+        <p>Browser response mocking tests the frontend against controlled responses. Replaying sanitized requests against a real isolated backend tests server behavior and side effects. The contract declares which is required, its fixture/reset procedure, request ordering, and expected results.</p>
+        <p>Correlate browser and network evidence with required server logs, traces, database changes, and queue or external-service substitutes. A missing required observation is inconclusive. The guide explicitly identifies signals that do not apply.</p>
+        <p>Retain the exact code and guide revisions, environment and fixture versions, tool output, and artifact hashes with the run. The engine checks these against the approved contract before accepting a pass.</p>
+        <p><a href="service-line-verification.md">This prototype’s verification guide</a> · <a href="templates/service-line-verification.md">Template for another service</a></p>
+      </details>
+      <details>
+        <summary>Example: verifying a change in AppliedIn</summary>
+        <p>These check files already exist in AppliedIn. The commands below are proposed verification inputs; this document has not executed them.</p>
+        <table>
+          <thead><tr><th scope="col">Criterion</th><th scope="col">Evidence</th></tr></thead>
+          <tbody>
+            <tr><td>No unsafe retry</td><td><code>tests/tools/test_unconfirmed_submit_is_terminal.py</code> checks uncertain submissions and failures before a form opens.</td></tr>
+            <tr><td>No duplicate identity</td><td><code>tests/core/test_reapply.py</code> checks the identity guard and preservation of application history.</td></tr>
+            <tr><td>No regression</td><td>The configured suite: <code>.venv/bin/python -m pytest -q</code>.</td></tr>
+          </tbody>
+        </table>
+        <p>AppliedIn’s repository instructions require offline tests with fixtures or fake subprocesses. Verification must not submit real applications or drive a real browser.</p>
+        <pre><code># Proposed verification section of an approved plan
+verification:
+  profile: appliedin-v1
+  checks:
+    - id: retry-safety
+      criteria: [AC1, AC2]
+      argv:
+        - .venv/bin/python
+        - -m
+        - pytest
+        - -q
+        - tests/tools/test_unconfirmed_submit_is_terminal.py
+    - id: identity-guard
+      criteria: [AC3]
+      argv:
+        - .venv/bin/python
+        - -m
+        - pytest
+        - -q
+        - tests/core/test_reapply.py
+  required_suite: python-regression
+  review:
+    skill: verify
+    executor: work_item.executor
+    session: verification
+  repair_limit: 2</code></pre>
+        <p>The instance points to the product’s verification guide. The profile is the run’s resolved check configuration from that guide and the approved plan. The run pins the guide, profile, and skill versions. The engine captures the command arguments, environment identity, exit code, output, artifact hashes, plan version, and repository snapshot—including uncommitted changes.</p>
+      </details>
+      <details>
+        <summary>What the verify skill does</summary>
+        <ol class="rules">
+          <li>Read the approved plan, acceptance criteria, repository instructions, diff, and runner artifacts.</li>
+          <li>Check that the evidence addresses the requested behavior, including relevant failure cases. For a bug, seek a regression that fails before the fix and passes after it where reproducible.</li>
+          <li>Inspect changes to tests and commands. Deleted assertions, skipped tests, or a narrower suite cannot silently weaken the approved requirements.</li>
+          <li>Return <code>passed</code>, <code>failed</code>, or <code>inconclusive</code> for each criterion, with artifact references and actionable findings. Never invent a test result.</li>
+          <li>Request additional evidence or human review when the result cannot be established. The reviewer does not edit the implementation or approve its own repair.</li>
+        </ol>
+        <p>A separate session provides a second review; it does not guarantee correctness. The engine rejects missing artifacts, stale revisions, malformed results, unresolved required reviews, and failed mandatory checks. Human acceptance remains required for criteria assigned to a human.</p>
+        <p>Failed checks can suggest local lessons. A validated lesson can inform a future plan or test, but cannot change this run’s requirements.</p>
+      </details>
+    </section>
+
+    <section aria-labelledby="workflow-heading">
+      <h2 id="workflow-heading">Workflow contract</h2>
+      <ul class="rules">
+        <li><strong>Definitions live in the Service Line repo.</strong> Each run pins a workflow version.</li>
+        <li><strong>Approval is enforced by the engine.</strong> Implementation waits for a recorded human decision on the current plan.</li>
+        <li><strong>Retry and repair are separate.</strong> Execution failures use <code>Retry</code>/<code>Catch</code>. Failed checks route to repair through <code>Choice</code>.</li>
+        <li><strong>Completion requires evidence.</strong> An agent finishing a turn does not establish that the work item is correct.</li>
+      </ul>
+      <details>
+        <summary>Example: implementation after plan approval</summary>
+        <pre><code>"Implement": {
+  "Type": "Task",
+  "Resource": "service-line:agent.run",
+  "Parameters": {
+    "executor.$": "$.executor",
+    "workItem.$": "$.workItem",
+    "approvedPlan.$": "$.approvedPlan",
+    "workspace.$": "$.workspace",
+    "sessionRef": "implementation"
+  },
+  "ResultPath": "$.implementation",
+  "TimeoutSeconds": 1800,
+  "Next": "Verify"
+}</code></pre>
+        <p>The engine verifies the approval before dispatch. The action uses the customer’s executor and checkpoints the referenced session. <code>service-line:agent.run</code> is a proposed custom resource.</p>
+      </details>
+    </section>
+
+    <section aria-labelledby="ui-heading" id="interface">
+      <h2 id="ui-heading">Interface</h2>
+      <p>Start on Services and choose a service line. Its factory view places work at Intake, Plan, Approval, Implement, Verify, or Ready. Open an item to inspect its plan, sessions, checks, evidence, and changes. A top switcher preserves each service’s separate context.</p>
+      <p><a href="service-line-ui.html" style="font-size:14px;font-weight:600">Open the interactive UI preview →</a></p>
+      <iframe src="service-line-ui.html" title="Service Line interactive UI preview with sample data" loading="lazy" style="width:100%;height:820px;border:1px solid var(--border);border-radius:6px;background:#fff"></iframe>
+      <p class="note">Sample data. Actions only affect the preview.</p>
+    </section>
+
+    <section aria-labelledby="value-heading">
+      <h2 id="value-heading">Expected benefit</h2>
+      <p>Less repeated context and manual coordination. Approved work proceeds through checks and bounded repairs, while local lessons improve subsequent plans. The customer focuses on scope, decisions, and results.</p>
+    </section>
+  </main>
+</body>
+</html>

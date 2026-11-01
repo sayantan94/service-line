@@ -1,0 +1,12 @@
+.DS_Store
+.env
+.env.*
+!.env.example
+.local/
+instances/
+node_modules/
+_site/
+.sass-cache/
+.jekyll-cache/
+vendor/
+verification-artifacts/

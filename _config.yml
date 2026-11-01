@@ -1,0 +1,13 @@
+title: Service Line
+description: A software factory with customer-selected executors and human-approved plans.
+url: https://sayantan94.github.io
+baseurl: /service-line
+markdown: kramdown
+plugins:
+  - jekyll-relative-links
+exclude:
+  - README.md
+  - CONTRIBUTING.md
+  - verification-artifacts
+  - instances
+  - node_modules
