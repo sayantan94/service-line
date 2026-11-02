@@ -65,7 +65,7 @@ text{font-family:'Chalkboard SE','Segoe Print','Comic Sans MS',cursive;fill:#293
 <path class="connector" d="M402 608 Q363 611 323 607"/>
 <text x="362" y="589" class="note" text-anchor="middle">read</text>
 <path class="connector" d="M47 609 Q26 608 26 585 L26 343 Q26 320 44 321" stroke-dasharray="5 7"/>
-<text class="note" transform="translate(17 477) rotate(-90)" text-anchor="middle">new outcomes</text>
+<text class="note" transform="translate(24 477) rotate(-90)" text-anchor="middle">new outcomes</text>
 <path class="connector" d="M897 694 Q900 715 897 733"/>
 <path d="M759 742 Q887 738 1029 743 L1030 799 Q888 802 760 797 Z" fill="#faf5e9" stroke="#c7bba2" stroke-width="1.2"/>
 <text x="777" y="764" class="note" text-anchor="start">Unproven or rejected?</text>
