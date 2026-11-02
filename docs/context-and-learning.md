@@ -24,6 +24,7 @@ memory and its lifecycle.
 |---|---|---|
 | **Project instructions** | What rules apply here? | Use the service's test command and code conventions. |
 | **Session context** | Where did this work stop? | The patch is written; the retry check still fails. |
+| **Service context** | What remains relevant across tasks? | Reviewed project facts, preferences, decisions, and time-bound constraints. |
 | **Lessons** | What should future work account for? | A timeout can occur after a submission succeeds. |
 | **Skills** | How do we perform a recurring task? | Replay a timeout, retry, and check for duplicate records. |
 | **Run state and evidence** | What actually happened? | Plan v2 was approved; check output belongs to revision r3. |
@@ -42,7 +43,7 @@ authority for approvals and completion.
 </div>
 
 At planning or resume, read a small memory index and retrieve only entries relevant
-to the task, code area, and current checkout. Loading every transcript would fill
+to the task, code area, current checkout, and time. Loading every transcript would fill
 the context window with unrelated or stale information. Record the memory version,
 lesson IDs, and skill versions used by each run.
 
@@ -63,14 +64,15 @@ conversation history. An executor adapter exposes scoped list, search, read, and
 write operations. A dedicated memory tool and ordinary filesystem tools can use
 the same store. Service Line controls paths and write permissions.
 
-Sessions write their own context and candidates. Approved lessons and skills are
-read-only to normal work sessions. Reading a note does not make it a project rule,
+Sessions write their own session context and candidates. Approved service context,
+lessons, and skills are read-only to normal work sessions. Reading a note does not make it a project rule,
 an approval, or evidence that a check passed.
 
 ```text
 instances/appliedin/
 ├── instance.yaml
 ├── learning/
+│   ├── context.md                 # reviewed facts, preferences, and validity
 │   ├── lessons.md                 # index of approved lessons
 │   ├── candidates/                # observations awaiting review
 │   ├── consolidations/            # input versions, proposed diffs, validation
@@ -95,16 +97,20 @@ reuse requires an explicit, reviewed copy.
 
 ## Between work items: dreaming
 
-**Dreaming** is a consolidation job that reviews several completed or stopped
-runs together. It finds patterns a single session may miss and keeps retained
-memory useful as the codebase changes.
+**Dreaming** synthesizes retained memory from stable session history, corrections,
+and evidence, taking time and code versions into account. It can refresh project
+facts, preferences, and constraints as well as lessons from failures. A date can
+make an entry stale without proving that a planned action actually happened.
+
+Validation and human publication are Service Line policies layered onto this
+memory process. They are not universal requirements of dreaming.
 
 [Read the full dreaming concept](dreaming.md): what it learns, the lifecycle,
 evaluation, publication, and an AppliedIn example.
 
-<div class="concept-diagram" role="region" tabindex="0" aria-label="Learning loop diagram; scroll horizontally if needed" markdown="1">
+<div class="concept-diagram" role="region" tabindex="0" aria-label="Dreaming whiteboard diagram; scroll horizontally if needed" markdown="1">
 
-![Learning loop: past sessions, evidence, and current memory produce a candidate revision. Validation and human review gate publication. Rejected or incomplete candidates leave current memory unchanged. Future runs reuse approved memory and produce new evidence.](assets/learning-loop.svg)
+![Dreaming whiteboard: history, current memory, time, and versions feed synthesis. Service Line validates and reviews candidate context and lessons before publication. Future work retrieves entries that are still relevant and valid.](assets/dreaming-whiteboard.svg)
 
 </div>
 
@@ -123,15 +129,16 @@ evaluation, publication, and an AppliedIn example.
 5. **Publish.** Make an approved version available to future runs. Preserve old
    versions and histories so a lesson can be disabled, superseded, or rolled back.
 
-Run consolidation on demand or on a configured schedule, with session, time, and
-token limits. Use the customer's executor and the existing workflow, session, and
-run primitives. A failed or canceled job never publishes a partial memory store.
+Run consolidation on demand, at validity boundaries, or on a configured schedule,
+with session, time, and token limits. Use the customer's executor and the existing
+workflow, session, and run primitives. A failed or canceled job never publishes a
+partial memory store.
 
 Each candidate records its sources, scope, proposed change, validation, and review
 status. Sessions write separate candidates; one writer publishes per instance.
 Publication checks that its input memory version is still current. If it changed,
 reconcile and review the new diff. Active runs keep their recorded memory version
-and approved plan.
+and approved plan, while checking validity before each use.
 
 ## From lesson to skill
 
