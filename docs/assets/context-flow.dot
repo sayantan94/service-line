@@ -1,0 +1,20 @@
+digraph context_flow {
+  graph [rankdir=TB, bgcolor="#ffffff", pad="0.32", nodesep="0.28", ranksep="0.42", splines=polyline];
+  node [shape=box, style="rounded,filled", fillcolor="#f7fafc", color="#cadce9", fontname="Arial", fontsize=16, fontcolor="#283e50", margin="0.20,0.15", penwidth=1.1];
+  edge [color="#789db8", arrowsize=0.7, penwidth=1.2, fontname="Arial", fontsize=12, fontcolor="#536f84"];
+  rules [label="Project instructions\nCustomer-owned rules"];
+  checkpoint [label="Session checkpoint\nCurrent work and next step"];
+  memory [label="Approved memory\nLessons and skills"];
+  {rank=same; rules; checkpoint; memory}
+  retrieve [label="Load relevant context\nTask + code area + checkout", fillcolor="#eaf4fc", color="#a8cbe5"];
+  session [label="Codex or Claude session\nCustomer-selected executor", fillcolor="#eaf4fc", color="#a8cbe5", penwidth=1.5];
+  evidence [label="Checkpoint and run evidence\nDecisions, results, blockers"];
+  candidates [label="Candidate lessons\nObservations with source links"];
+  {rank=same; evidence; candidates}
+  rules -> retrieve;
+  checkpoint -> retrieve;
+  memory -> retrieve;
+  retrieve -> session [label="pin memory version"];
+  session -> evidence [label="record progress"];
+  session -> candidates [label="propose learning"];
+}

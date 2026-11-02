@@ -10,6 +10,7 @@ Keep claims about implemented behavior separate from the proposed runtime.
 - `service-line.html`: standalone architecture document.
 - `docs/*.md`: documentation served by GitHub Pages and readable on GitHub.
 - `_layouts/docs.html` and `docs/assets/docs.css`: documentation layout and styling.
+- `docs/assets/*.dot`: diagram sources; render matching SVGs with `dot -Tsvg input.dot -o output.svg`.
 - `workflows/`: proposed ASL-style definitions.
 
 Use relative links and generic example repository paths. Keep runtime data,

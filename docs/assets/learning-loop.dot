@@ -1,0 +1,21 @@
+digraph learning_loop {
+  graph [rankdir=TB, bgcolor="#ffffff", pad="0.32", nodesep="0.35", ranksep="0.36", splines=polyline];
+  node [shape=box, style="rounded,filled", fillcolor="#f7fafc", color="#cadce9", fontname="Arial", fontsize=16, fontcolor="#283e50", margin="0.22,0.15", penwidth=1.1];
+  edge [color="#789db8", arrowsize=0.7, penwidth=1.2, fontname="Arial", fontsize=12, fontcolor="#536f84"];
+  input [label="Snapshot inputs\nPast sessions, evidence, current memory"];
+  consolidate [label="Consolidate into a candidate revision\nFind patterns, merge, flag stale lessons", fillcolor="#eaf4fc", color="#a8cbe5"];
+  validate [label="Validate technical claims\nRegression tests, replay, browser journeys"];
+  review [label="Human review\nDiff + sources + validation results", fillcolor="#eaf4fc", color="#a8cbe5", penwidth=1.5];
+  retain [label="Keep current memory\nCandidate stays inactive", fillcolor="#faf9f6", color="#d9d0bf"];
+  publish [label="Publish approved memory version\nOnly if the input version is still current"];
+  reuse [label="Future work retrieves relevant memory\nMeasure outcomes; capture new evidence", fillcolor="#eaf4fc", color="#a8cbe5"];
+  {rank=same; review; retain}
+  input -> consolidate;
+  consolidate -> validate;
+  validate -> review [label="evidence supports change"];
+  validate -> retain [label="failed / incomplete"];
+  review -> retain [label="reject"];
+  review -> publish [label="approve"];
+  publish -> reuse;
+  reuse:e -> input:e [label="next batch", constraint=false, color="#abc4d8", style=dashed];
+}
