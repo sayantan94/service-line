@@ -99,6 +99,9 @@ reuse requires an explicit, reviewed copy.
 runs together. It finds patterns a single session may miss and keeps retained
 memory useful as the codebase changes.
 
+[Read the full dreaming concept](dreaming.md): what it learns, the lifecycle,
+evaluation, publication, and an AppliedIn example.
+
 <div class="concept-diagram" role="region" tabindex="0" aria-label="Learning loop diagram; scroll horizontally if needed" markdown="1">
 
 ![Learning loop: past sessions, evidence, and current memory produce a candidate revision. Validation and human review gate publication. Rejected or incomplete candidates leave current memory unchanged. Future runs reuse approved memory and produce new evidence.](assets/learning-loop.svg)

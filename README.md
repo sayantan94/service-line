@@ -37,7 +37,8 @@ means the change has evidence for review, not that it has been merged or deploye
 [Primitive definitions and ownership](docs/primitives.md) ·
 [Workflow contract](docs/workflow.md) ·
 [Verification](docs/verification.md) ·
-[Context and learning](docs/context-and-learning.md)
+[Context and learning](docs/context-and-learning.md) ·
+[Dreaming](docs/dreaming.md)
 
 ## Verification
 

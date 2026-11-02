@@ -33,6 +33,7 @@ repair. Missing evidence stops progress. Ready means ready for review.
 - [Workflow](workflow.md): approval, execution, repair, and resumption.
 - [Verification](verification.md): browser actions, replay, observations, and gates.
 - [Context and learning](context-and-learning.md): session memory and reusable lessons.
+- [Dreaming](dreaming.md): how past work becomes validated guidance for future runs.
 - [Try the prototype](getting-started.md): the controls and current limits.
 
 The expected benefit is less repeated explanation and manual coordination.
