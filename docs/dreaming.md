@@ -112,11 +112,12 @@ available to future work. The existing memory stays usable throughout.
 
 <div class="concept-diagram whiteboard-diagram" role="region" tabindex="0" aria-label="Dreaming whiteboard diagram; scroll horizontally if needed" markdown="1">
 
-![Whiteboard: history, current memory, time, and versions feed background synthesis of candidate facts, preferences, context, and lessons. Service Line validates and reviews changes before publishing versioned memory. Later work retrieves relevant, still-valid entries and produces new evidence. Rejected changes leave current memory unchanged.](assets/dreaming-whiteboard.svg)
+![Whiteboard: history, current memory, time, and versions feed background synthesis of candidate facts, preferences, context, and lessons. Service Line validates and reviews changes before publishing versioned memory. Later work retrieves relevant, still-valid entries and produces new evidence. Rejected changes leave current memory unchanged.](assets/dreaming-whiteboard.png)
 
 </div>
 
-[Open the whiteboard at full size](assets/dreaming-whiteboard.svg).
+[Open the whiteboard image](assets/dreaming-whiteboard.png) ·
+[Editable diagram](assets/dreaming-whiteboard.svg)
 
 ## The lifecycle
 

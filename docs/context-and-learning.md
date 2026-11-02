@@ -110,7 +110,7 @@ evaluation, publication, and an AppliedIn example.
 
 <div class="concept-diagram" role="region" tabindex="0" aria-label="Dreaming whiteboard diagram; scroll horizontally if needed" markdown="1">
 
-![Dreaming whiteboard: history, current memory, time, and versions feed synthesis. Service Line validates and reviews candidate context and lessons before publication. Future work retrieves entries that are still relevant and valid.](assets/dreaming-whiteboard.svg)
+![Dreaming whiteboard: history, current memory, time, and versions feed synthesis. Service Line validates and reviews candidate context and lessons before publication. Future work retrieves entries that are still relevant and valid.](assets/dreaming-whiteboard.png)
 
 </div>
 
