@@ -289,11 +289,6 @@ function toast(t){const el=$('#toast');el.textContent=t;el.hidden=false;clearTim
 
 function renderBoard(){
   const s=svc(),x=i=>20+i*190,chip=(i,name,text)=>`<div class="loop" style="left:${x(i)}px"><b>${name}</b><span>${text}</span></div>`;let h='';
-  h+=`<svg aria-hidden="true"><defs><marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0L10,5L0,10z" fill="var(--line-strong)"/></marker><marker id="arrw" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0L10,5L0,10z" fill="var(--warn)"/></marker></defs>`;
-  for(let i=0;i<5;i++)h+=`<path class="wire" d="M${x(i)+176},320 H${x(i+1)-2}" marker-end="url(#arr)"/>`;
-  h+=`<path class="wire" d="M${x(0)+130},72 V96" marker-end="url(#arr)"/><path class="wire" d="M${x(5)+130},98 V74" marker-end="url(#arr)"/>`;
-  h+=`<path class="wire warn" d="M${x(5)},51 H${x(0)+180}" marker-end="url(#arrw)"/><text class="wire-label warn" x="${(x(0)+x(5)+176)/2}" y="43" text-anchor="middle">a regression after deploy becomes a new work item</text>`;
-  h+=`<path class="wire warn" d="M${x(4)+88},521 C${x(4)+88},575 ${x(3)+88},575 ${x(3)+88},524" marker-end="url(#arrw)"/><text class="wire-label warn" x="${(x(3)+x(4))/2+88}" y="586" text-anchor="middle">a check failed: repair, at most twice</text></svg>`;
   h+=chip(0,'Maintain','a scheduled scan proposes work')+chip(5,'Observe','live signals after you deploy');
   STAGES.forEach(([name,who],i)=>{
     const lane=s.items.filter(w=>stageOf(w)===i);
