@@ -6,9 +6,35 @@ Choose an executor, approve a plan, and follow the work through implementation,
 verification, and repair. Each service keeps its own work items, session context,
 and reviewed lessons.
 
-**Status:** interactive UI prototype and architecture proposal. Executor adapters,
-the workflow engine, durable storage, and real verification are not implemented.
-The mock UI uses sample data and resets on reload.
+**Status:** the change loop runs. The engine drives Codex and Claude through
+research, plan, plan review, your approval, implementation, engine-run checks,
+verification, and bounded repair, and records every step in a durable run log.
+The observe, maintain, and learning loops are designed but not built.
+
+## Run it
+
+```sh
+python3 -m service_line serve          # then open http://127.0.0.1:8765
+```
+
+Add a service (a git repository on this computer), create a work item, and press
+Start. You need Python 3.11 or later, git, and the `claude` and `codex` command-line
+tools signed in. Nothing else is installed. Services and runs are kept in
+`instances/`, which Git ignores.
+
+The same steps from the command line:
+
+```sh
+python3 -m service_line add-service "My App" /path/to/repo --implementer Codex
+python3 -m service_line new-item my-app "Fix the retry bug" --outcome "..." --criterion "..."
+python3 -m service_line start my-app WI-001      # research, plan, plan review; then waits for you
+python3 -m service_line approve my-app WI-001    # implement, check, verify
+python3 -m service_line status
+```
+
+A work item can only pass if the service's repository has a
+`service-line-verification.md` listing the commands that must pass. See the
+[template](templates/service-line-verification.md).
 
 [Documentation](https://sayantan94.github.io/service-line/docs/) ·
 [Runtime design](https://sayantan94.github.io/service-line/design/) ·
@@ -65,10 +91,12 @@ engine checks the evidence against the approved plan and current code snapshot.
 [Template for a service](templates/service-line-verification.md) ·
 [This prototype's guide](service-line-verification.md)
 
-## Try locally
+## Try the sample UI
 
-Open `service-line-ui.html` in a browser from this checkout. No installation or account is required.
-`service-line.html` is the standalone architecture document.
+Open `service-line-ui-next.html` directly in a browser to see the canvas UI with
+sample data and no engine. `service-line-ui.html` is the earlier mock UI, and
+`service-line.html` is the standalone architecture document. The rest of this
+section describes the earlier mock UI.
 
 The **Factory** view gives each service a floor. Select a workstation or work item
 to inspect its state, open its session, or review its checks. **Line** opens the
@@ -91,7 +119,9 @@ workflows/software-change.asl.json  Proposed workflow; no runtime included
 workflows/post-deploy-observe.asl.json  Proposed observe loop; no runtime included
 templates/                         Per-service verification template
 service-line-ui.html               Interactive mock UI
-service-line-ui-next.html          Canvas UI under review as its replacement
+service-line-ui-next.html          Canvas UI: live when served by the engine, sample data when opened as a file
+service_line/                      The engine
+tests/                             Engine tests: python3 -m unittest discover -s tests
 service-line.html                  Standalone architecture document
 design/                            Runtime design: one overview diagram and a page per part
 service-line-verification.md       Verification contract for this prototype

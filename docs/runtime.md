@@ -11,8 +11,8 @@ The engine is the only part that moves a work item forward. Agents do the
 thinking inside a step. The engine decides which step runs, what the agent may
 touch, and whether the result counts.
 
-> This page is the proposed runtime design. None of it is implemented. The
-> prototype shows sample data only.
+> The change loop described here is implemented in `service_line/`. The parts
+> marked as later (forked repairs, the other three loops) are not.
 
 [Open the runtime design](https://sayantan94.github.io/service-line/design/): one diagram with every piece, then a page each
 for the parts, the steps, the run log and recovery, the agents and their limits,
@@ -109,8 +109,12 @@ terminal output.
 
 | Executor | Interface | What the engine controls |
 |---|---|---|
-| Claude | Claude Agent SDK | Working directory, permission mode, a permission callback in engine code, removed tools |
-| Codex | `codex app-server` over standard input and output | Working directory, sandbox mode, approval policy, interrupt |
+| Claude | Claude Code in headless mode, streaming JSON | Working directory, the tool list for the step, a permission mode that denies everything else, and a sandbox around the whole process |
+| Codex | `codex exec` with JSON events | Working directory and Codex's own sandbox mode: read-only or workspace-write |
+
+The first version drives both through their non-interactive command-line modes.
+The Claude Agent SDK and `codex app-server` give finer control, such as
+interrupting a turn, and are the intended next step.
 
 Both adapters follow the same contract:
 
@@ -221,8 +225,9 @@ service_line/
 └── skills/
 ```
 
-The engine uses the Python standard library plus the Claude Agent SDK. State is
-plain files. There is no database and no workflow server.
+The engine uses only the Python standard library. State is plain files: a
+service is `instance.json`, a work item is `workitem.json`, and plans, approvals,
+and run logs sit beside them. There is no database and no workflow server.
 
 ## Deliberately left out
 

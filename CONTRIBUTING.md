@@ -19,6 +19,13 @@ Keep claims about implemented behavior separate from the proposed runtime.
 Use relative links and generic example repository paths. Keep runtime data,
 credentials, local session context, and verification captures out of public commits.
 
+## Engine
+
+`service_line/` is the engine. Run `python3 -m unittest discover -s tests` before
+committing; the suite uses stand-in agents and needs no network. Write the test
+first. Tests that exercise the sandbox create their scratch folders under
+`.local/`, because the sandbox always allows writes to the system temp folder.
+
 ## Verify
 
 Follow `service-line-verification.md`. Exercise changed browser flows, inspect

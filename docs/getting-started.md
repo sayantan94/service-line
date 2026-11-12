@@ -7,6 +7,10 @@ permalink: /docs/getting-started/
 
 # Try the prototype
 
+> The engine now runs for real: `python3 -m service_line serve`, then open
+> http://127.0.0.1:8765. See the README. This page describes the earlier mock UI,
+> which uses sample data only.
+
 [Open the mock UI](../service-line-ui.html). You can also clone the repository and
 open `service-line-ui.html` directly. No installation or credentials are needed.
 Keep the checkout's `assets/` directory beside the HTML.
