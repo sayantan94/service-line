@@ -52,7 +52,7 @@ manual fields in this preview.
 | Editable plans and simulated approval gates | Durable approval records and resumable state |
 | Session and lesson views | Codex and Claude adapters with persistent sessions |
 | Illustrative checks and evidence | Commands, browser execution, backend replay, artifact capture |
-| The change line from Intake to Ready | Risk levels, post-deploy observation, and scheduled maintenance scans |
+| Risk levels and implementer and verifier labels on sample items | Risk assessment, hidden scenarios, post-deploy observation, scheduled scans |
 
 All mock state stays in the page and resets on reload. No merges, deployments,
 external submissions, or real test runs occur from its controls.

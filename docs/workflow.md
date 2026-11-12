@@ -159,4 +159,5 @@ nothing had started is run again. A step whose agent call or command had started
 but not finished has an unknown outcome: the engine resets the checkout to the
 last checkpoint before running it again. It never continues on a half-changed
 checkout. [Runtime](runtime.md#recovery-after-a-crash) has the details. These runtime guarantees are proposed, not implemented in the mock UI.
-The mock UI also does not show risk levels, the observe loop, or maintenance scans.
+The mock UI shows risk levels and the two executors with sample data. It does not
+simulate the observe loop or maintenance scans.
