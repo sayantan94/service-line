@@ -10,3 +10,5 @@ _site/
 .jekyll-cache/
 vendor/
 verification-artifacts/
+__pycache__/
+*.egg-info/
