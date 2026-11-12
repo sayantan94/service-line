@@ -39,6 +39,10 @@ class Recovery(unittest.TestCase):
         self.log.end("check", c, "completed")
         self.assertEqual(close_open(self.log), {"outcome": "effects-finished", "state": "RunChecks"})
 
+    def test_events_that_merely_end_in_start_are_not_open_brackets(self):
+        self.log.append("run/start", {"workflow": "software-change"})
+        self.assertEqual(close_open(self.log), {"outcome": "closed", "state": None})
+
     def test_closing_twice_changes_nothing_the_second_time(self):
         self.log.start("state", name="Plan")
         close_open(self.log)

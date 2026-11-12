@@ -148,12 +148,15 @@ class RunLog:
 
 
 SIDE_EFFECTS = ("call", "check")
+BRACKETS = ("state", *SIDE_EFFECTS)
 
 
 def _open_brackets(events: list[dict[str, Any]]) -> dict[int, dict[str, Any]]:
     opened: dict[int, dict[str, Any]] = {}
     for event in events:
         kind, _, edge = event["type"].partition("/")
+        if kind not in BRACKETS:
+            continue
         if edge == "start":
             opened[event["seq"]] = event
         elif edge == "end":
