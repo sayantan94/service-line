@@ -112,7 +112,7 @@ a.ghost{text-decoration:none}
 .tabs button{border:0;background:transparent;padding:6px 9px;border-radius:7px;color:var(--muted);font-weight:500}
 .tabs button[aria-selected=true]{background:var(--raised);color:var(--ink)}
 .field{display:grid;grid-template-columns:84px minmax(0,1fr);gap:6px 8px;align-items:center}
-.field dt{color:var(--muted)}.field dd{margin:0;min-width:0}
+.field dt{color:var(--muted)}.field dd{margin:0;min-width:0;overflow-wrap:anywhere}
 .field select{width:100%;border:1px solid var(--line);background:var(--raised);border-radius:6px;padding:4px 6px}
 .seg{display:flex;background:var(--raised);border-radius:7px;padding:2px;gap:2px}
 .seg button{flex:1;border:0;background:transparent;border-radius:5px;padding:4px 0;color:var(--muted)}
@@ -160,6 +160,25 @@ dialog textarea{min-height:64px;resize:vertical}
 .pair{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 .actions{display:flex;justify-content:flex-end;gap:8px;margin-top:16px}
 .toast{position:fixed;left:50%;bottom:76px;transform:translateX(-50%);background:var(--ink);color:var(--panel);padding:8px 14px;border-radius:9px;z-index:20;max-width:calc(100vw - 32px)}
+.modes{width:auto;flex:none}
+.modes button{padding:5px 12px;flex:none}
+.kind{font-size:10px;padding:0 6px;border-radius:3px;line-height:16px;white-space:nowrap}
+.kind.agent{background:color-mix(in srgb,var(--codex) 14%,transparent);color:var(--codex)}
+.kind.engine{background:var(--raised);color:var(--muted)}
+.kind.you{background:var(--select-soft);color:var(--select)}
+.kind.end{background:var(--warn-soft);color:var(--warn)}
+.board.docs{width:auto;height:auto;transform:none!important}
+.doc{width:min(760px,calc(100vw - 600px));min-width:320px;background:var(--panel);border:1px solid var(--line);border-radius:4px}
+.doc-name{display:flex;justify-content:space-between;gap:10px;padding:9px 14px;border-bottom:1px solid var(--line);font-family:var(--mono);font-size:11px;color:var(--muted)}
+.doc pre{margin:0;padding:16px 18px;font:11.5px/1.65 var(--mono);white-space:pre-wrap;overflow-wrap:anywhere;min-height:420px}
+.tree{display:flex;flex-direction:column}
+.tree .row{font-family:var(--mono);font-size:11px;min-height:26px;padding-top:3px;padding-bottom:3px}
+.tree .dir{color:var(--muted);cursor:default}
+.tree .dir:hover{background:transparent}
+pre.code{margin:0;padding:10px;background:var(--raised);border-radius:8px;font:10.5px/1.55 var(--mono);white-space:pre-wrap;overflow-wrap:anywhere}
+.pills{display:flex;flex-wrap:wrap;gap:5px}
+.pills code{font:10.5px var(--mono);background:var(--raised);border-radius:4px;padding:1px 6px}
+@media (max-width:900px){.doc{width:auto}}
 [hidden]{display:none!important}
 
 @media (max-width:900px){
@@ -181,6 +200,7 @@ dialog textarea{min-height:64px;resize:vertical}
 <header class="panel top">
   <span class="logo">SL</span>
   <div class="crumb"><span class="muted">Service Line /</span><select id="service" aria-label="Service"></select></div>
+  <div class="seg modes" id="modes" role="group" aria-label="View"></div>
   <span class="sample" title="Nothing here runs an agent or a test">Sample data</span>
   <span class="spacer"></span>
   <div class="people" id="people" aria-label="Who is working on the selected item"></div>
@@ -225,7 +245,7 @@ function seed(){
   const ready=S.appliedin.items[2];for(const c of ready.checks)ready.results[c]=result(ready,S.appliedin,c,'passed');ready.results.review=result(ready,S.appliedin,'review','passed');
   return S;
 }
-let services,sid,selected,tab='details',query='',scenario='repair',zoom=1,theme='light',toastTimer;
+let services,sid,selected,tab='details',query='',scenario='repair',zoom=1,theme='light',toastTimer,mode='line',selState='Research',wfTab='state',selFile='workflows/software-change.asl.json';
 const svc=()=>services[sid],cur=()=>svc().items.find(w=>w.id===selected);
 function stageOf(w){if(w.status==='queued')return 0;if(w.status==='changes')return 1;if(w.status==='waiting')return 2;if(w.status==='ready')return 5;return ['implement','repair'].includes(w.phase)?3:4}
 function push(w,type,text){w.log.push([type,text])}
@@ -287,21 +307,125 @@ function openChanges(w){dialog(`<h2>Request plan changes</h2><p class="muted">${
 function dialog(html,done){const f=$('#dialog-form');f.innerHTML=html;f.onsubmit=e=>{e.preventDefault();done(new FormData(f));$('#dialog').close()};$('#dialog').showModal()}
 function toast(t){const el=$('#toast');el.textContent=t;el.hidden=false;clearTimeout(toastTimer);toastTimer=setTimeout(()=>el.hidden=true,3600)}
 
-function renderBoard(){
+function renderLine(){
   const s=svc(),x=i=>20+i*190,chip=(i,name,text)=>`<div class="loop" style="left:${x(i)}px"><b>${name}</b><span>${text}</span></div>`;let h='';
   h+=chip(0,'Maintain','a scheduled scan proposes work')+chip(5,'Observe','live signals after you deploy');
   STAGES.forEach(([name,who],i)=>{
     const lane=s.items.filter(w=>stageOf(w)===i);
     h+=`<section class="frame ${[0,2,5].includes(i)?'you':''}" style="left:${x(i)}px" aria-label="${name}"><div class="frame-name"><b>${name}</b><span>${lane.length||''}</span></div><div class="frame-body"><div class="frame-who">${who}</div>${lane.map(card).join('')||'<div class="empty">Nothing here</div>'}</div></section>`});
-  const b=$('#board');b.innerHTML=h;b.style.transform=`scale(${zoom})`;b.parentElement.style.height=(610*zoom+186)+'px';b.parentElement.style.width=(1166*zoom+(innerWidth>900?580:32))+'px';
+  const b=$('#board');b.className='board';b.innerHTML=h;b.style.transform=`scale(${zoom})`;b.parentElement.style.height=(610*zoom+186)+'px';b.parentElement.style.width=(1166*zoom+(innerWidth>900?580:32))+'px';
 }
+
+/* ---- the workflow definition and what each state means ---- */
+const WORKFLOW={Comment:'Proposed Service Line workflow.',StartAt:'Initialize',States:{
+  Initialize:{Type:'Pass',Result:0,ResultPath:'$.repairs',Next:'Research'},
+  Research:{Type:'Task',Resource:'service-line:agent.research',ResultPath:'$.research',TimeoutSeconds:900,Next:'Plan'},
+  Plan:{Type:'Task',Resource:'service-line:agent.plan',ResultPath:'$.plan',TimeoutSeconds:900,Next:'ReviewPlan'},
+  ReviewPlan:{Type:'Task',Resource:'service-line:agent.review-plan',ResultPath:'$.planReview',TimeoutSeconds:600,Next:'AwaitApproval'},
+  AwaitApproval:{Type:'Task',Resource:'service-line:approval.wait',ResultPath:'$.approval',Next:'ApprovalDecision'},
+  ApprovalDecision:{Type:'Choice',Choices:[{Variable:'$.approval.decision',StringEquals:'approved',Next:'Implement'},{Variable:'$.approval.decision',StringEquals:'revise',Next:'Plan'}],Default:'Cancelled'},
+  Implement:{Type:'Task',Resource:'service-line:agent.implement',ResultPath:'$.implementation',TimeoutSeconds:1800,Next:'RunChecks'},
+  RunChecks:{Type:'Task',Resource:'service-line:checks.run',ResultPath:'$.checks',Next:'Review'},
+  Review:{Type:'Task',Resource:'service-line:agent.verify',ResultPath:'$.review',TimeoutSeconds:1800,Next:'Evaluate'},
+  Evaluate:{Type:'Task',Resource:'service-line:verification.evaluate',ResultPath:'$.verification',Next:'Route'},
+  Route:{Type:'Choice',Choices:[{Variable:'$.verification.verdict',StringEquals:'passed',Next:'Ready'},{And:[{Variable:'$.verification.verdict',StringEquals:'failed'},{Variable:'$.repairs',NumericLessThan:2}],Next:'Repair'}],Default:'NeedsAttention'},
+  Repair:{Type:'Task',Resource:'service-line:repair.run',ResultPath:'$',TimeoutSeconds:1800,Next:'RunChecks'},
+  Ready:{Type:'Succeed'},
+  NeedsAttention:{Type:'Fail',Error:'VerificationNeedsAttention',Cause:'Required evidence is missing, inconclusive, or the repair limit is reached.'},
+  Cancelled:{Type:'Fail',Error:'PlanNotApproved',Cause:'Implementation requires an approved plan.'}}};
+const RO='Read-only commands';
+const META={
+  Initialize:{stage:0,kind:'engine',by:'Engine',what:'Creates the work item checkout and sets the repair count to zero.',skills:[],write:'The run state',run:'Nothing'},
+  Research:{stage:1,kind:'agent',by:'Implementer',what:'Maps the code, the project rules and the lessons that apply.',skills:['map-the-code','read-project-rules','recall-lessons'],write:'Research notes only',run:RO},
+  Plan:{stage:1,kind:'agent',by:'Implementer',what:'Writes the scope, phases, checks and a risk level.',skills:['write-plan','split-into-phases','choose-checks','assess-risk'],write:'The plan only',run:RO},
+  ReviewPlan:{stage:1,kind:'agent',by:'Verifier',what:'Challenges the plan and its risk level. It cannot change the plan.',skills:['review-plan','challenge-risk'],write:'Findings only',run:RO},
+  AwaitApproval:{stage:2,kind:'you',by:'You',what:'Waits for you to approve, ask for a revision, or reject.',skills:[],write:'Your decision',run:'Nothing'},
+  ApprovalDecision:{stage:2,kind:'engine',by:'Engine',what:'Routes on your decision and binds the plan, risk level and check list.',skills:[],write:'The run state',run:'Nothing'},
+  Implement:{stage:3,kind:'agent',by:'Implementer',what:'Builds one plan phase at a time and commits a checkpoint after each.',skills:['implement-phase','follow-conventions','write-tests','self-check','checkpoint','flag-scope-change'],write:'Its own checkout',run:'Commands inside the checkout'},
+  Repair:{stage:3,kind:'agent',by:'Implementer',what:'Finds the cause of a failed check and repairs inside the approved plan.',skills:['diagnose-failure','repair-in-scope','checkpoint'],write:'Its own checkout',run:'Commands inside the checkout'},
+  RunChecks:{stage:4,kind:'engine',by:'Engine',what:'Runs format, lint, build and the checks the risk level requires.',skills:[],write:'Check results',run:'The guide\'s commands, in the sandbox wrapper'},
+  Review:{stage:4,kind:'agent',by:'Verifier',what:'Exercises the service, runs hidden scenarios and reviews the diff.',skills:['verify-criteria','exercise-browser','replay-traffic','security-review','review-diff','write-findings'],write:'A scratch folder and disposable test state',run:'The service and its checks'},
+  Evaluate:{stage:4,kind:'engine',by:'Engine',what:'Checks that every required result is present and belongs to the current revision.',skills:[],write:'The verdict',run:'Nothing'},
+  Route:{stage:4,kind:'engine',by:'Engine',what:'Passed goes to Ready. Failed goes to Repair, at most twice. Anything else needs attention.',skills:[],write:'The run state',run:'Nothing'},
+  Ready:{stage:5,kind:'you',by:'You',what:'The change and its evidence are ready for your review. You merge and deploy.',skills:['summarize-evidence','capture-lessons'],write:'Nothing',run:'Nothing'},
+  NeedsAttention:{stage:5,kind:'end',by:'You',what:'Evidence is missing or the repair limit was reached. The run stops for your decision.',skills:[],write:'Nothing',run:'Nothing'},
+  Cancelled:{stage:5,kind:'end',by:'You',what:'The plan was rejected. Nothing was implemented.',skills:[],write:'Nothing',run:'Nothing'}};
+const KIND={agent:'Agent',engine:'Engine',you:'You',end:'Stop'};
+const nextOf=st=>st.Next?[st.Next]:st.Choices?[...st.Choices.map(c=>c.Next),st.Default]:[];
+function stateCard(name){const st=WORKFLOW.States[name],m=META[name],sel=name===selState,nx=nextOf(st);
+  return `<button class="card" data-state="${name}" aria-pressed="${sel}">${sel?'<i class="handle a"></i><i class="handle b"></i><i class="handle c"></i><i class="handle d"></i>':''}<span class="card-top"><span class="mono">${st.Type}</span><span class="kind ${m.kind}">${KIND[m.kind]}</span></span><span class="card-title">${name}</span><span class="card-meta">${nx.length?'then '+nx.join(', '):'ends the run'}</span></button>`}
+function renderWorkflowBoard(){
+  const x=i=>20+i*190;let h=`<div class="loop" style="left:${x(0)}px;width:366px"><b>software-change v1</b><span class="mono">workflows/software-change.asl.json</span></div>`;
+  STAGES.forEach(([name],i)=>{const names=Object.keys(WORKFLOW.States).filter(n=>META[n].stage===i);
+    h+=`<section class="frame" style="left:${x(i)}px" aria-label="${name}"><div class="frame-name"><b>${name}</b><span>${names.length}</span></div><div class="frame-body"><div class="frame-who">${names.length} ${names.length===1?'state':'states'}</div>${names.map(stateCard).join('')}</div></section>`});
+  const b=$('#board');b.className='board';b.innerHTML=h;b.style.transform=`scale(${zoom})`;b.parentElement.style.height=(610*zoom+186)+'px';b.parentElement.style.width=(1166*zoom+(innerWidth>900?580:32))+'px';
+}
+function renderStateList(){
+  let h=`<div class="sec"><div class="sec-title">Workflows</div><button class="row" aria-current="true"><span class="grow">software-change</span><span class="muted">v1</span></button><p class="muted" style="padding:6px 8px 0">bug-fix, refactor, maintenance-scan and the others arrive later.</p></div><div class="sec"><div class="sec-title">States, in order</div>`;
+  h+=Object.keys(WORKFLOW.States).map(n=>`<button class="row" data-state="${n}" aria-pressed="${n===selState}"><span class="grow">${n}</span><span class="kind ${META[n].kind}">${KIND[META[n].kind]}</span></button>`).join('');
+  $('#layers').innerHTML=h+'</div>';
+}
+function renderStateInspector(){
+  const st=WORKFLOW.States[selState],m=META[selState],nx=nextOf(st);
+  const body=wfTab==='state'?`<div class="sec"><dl class="field"><dt>Run by</dt><dd>${m.by}</dd><dt>Type</dt><dd class="mono">${st.Type}</dd>${st.Resource?`<dt>Action</dt><dd class="mono">${st.Resource}</dd>`:''}${st.TimeoutSeconds?`<dt>Time limit</dt><dd>${st.TimeoutSeconds/60} minutes</dd>`:''}<dt>Then</dt><dd>${nx.length?nx.map(n=>`<button class="ghost" data-state="${n}" style="padding:1px 6px">${n}</button>`).join(''):'Ends the run'}</dd></dl></div>
+    <div class="sec"><div class="sec-title">Limits</div><dl class="field"><dt>May write</dt><dd>${m.write}</dd><dt>May run</dt><dd>${m.run}</dd></dl></div>
+    <div class="sec"><div class="sec-title">Skills handed to the agent</div>${m.skills.length?`<div class="pills">${m.skills.map(k=>`<code>${k}</code>`).join('')}</div>`:'<p class="muted">None. This state is not run by an agent.</p>'}</div>
+    <div class="sec"><div class="sec-title">Definition</div><pre class="code">${esc(JSON.stringify({[selState]:st},null,2))}</pre></div>`
+   :`<div class="sec"><pre class="code">${esc(JSON.stringify(WORKFLOW,null,2))}</pre></div>`;
+  $('#inspector').innerHTML=`<div class="sec"><div style="display:flex;justify-content:space-between;gap:8px;margin-bottom:6px"><span class="mono muted">software-change v1</span><span class="kind ${m.kind}">${KIND[m.kind]}</span></div><h1>${selState}</h1><p class="muted">${m.what}</p></div><div class="tabs" role="tablist"><button role="tab" data-wftab="state" aria-selected="${wfTab==='state'}">State</button><button role="tab" data-wftab="asl" aria-selected="${wfTab==='asl'}">Whole file</button></div><div class="scroll">${body}</div>`;
+}
+
+/* ---- files: what Service Line keeps on disk for this service ---- */
+function fileSet(){
+  const s=svc(),w=cur(),base=`instances/${sid}/`,F=[];const add=(path,about,text)=>F.push({path,about,text});
+  add('workflows/software-change.asl.json','The workflow definition. A run pins one version of it.',JSON.stringify(WORKFLOW,null,2));
+  add('skills/plan/write-plan/SKILL.md','One of the instruction files the engine hands an agent for a step.','---\nname: write-plan\ndescription: Turn research notes into a plan with scope, phases, checks and a risk level.\n---\n\nState what is in scope and what is not.\nSplit the work into small phases. Each phase must be checkable on its own.\nFor every acceptance criterion, name the check that would fail if the code were broken.\nPropose a risk level and give the reasons.\nDo not edit code. Write the plan only.');
+  add('skills/implement/implement-phase/SKILL.md','An instruction file for the Implement step.','---\nname: implement-phase\ndescription: Build one phase of the approved plan and stop.\n---\n\nRead the phase. Follow the conventions of this repository.\nRun the fast checks yourself before handing over.\nUpdate your notes and commit a checkpoint.\nIf the plan no longer fits the code, stop and say so.');
+  add('skills/verify/verify-criteria/SKILL.md','An instruction file for the Verify step.','---\nname: verify-criteria\ndescription: Give a verdict for each acceptance criterion, with evidence.\n---\n\nStart the service in the test environment.\nExercise each criterion. Run the hidden scenarios.\nYou cannot edit the code you are reviewing.\nRecord a verdict and the evidence for every criterion.');
+  add(s.repo+'/service-line-verification.md','The service\'s own guide: how to start it, what to run, and what evidence is required.',`# ${s.name}, verification\n\n## Required commands\n${Object.entries(s.checks).map(([id,[t,c]])=>`- ${t}: ${c}`).join('\n')}\n\n## Hidden scenarios\nKept outside the implementer\'s checkout. Only the verifier runs them.\n\n## Risk levels\nLow: required commands and the verifier\'s review.\nMedium: adds a security review and checks on dependent callers.\nHigh: adds the full browser and replay journeys and a named reviewer.\n\n## Post-deploy signals\nRead-only. Used after a recorded deployment.`);
+  add(base+'instance.yaml','The service: its repository and defaults.',`name: ${s.name}\nrepository: ${s.repo}\nworkflow: software-change\nimplementer_default: ${s.items[0]?.executor||'Codex'}\nverification_guide: service-line-verification.md`);
+  add(base+'learning/lessons.md','Reviewed lessons. Plans load the ones that apply.','# Lessons\n\n- L-003, in use: a missing confirmation does not prove a submission failed.\n- L-004, needs review: test preference inheritance explicitly.');
+  if(w){const wb=base+`workitems/${w.id}/`;
+    add(wb+'workitem.md','What you asked for and how you will know it worked.',`# ${w.id}: ${w.title}\n\nType: ${w.type}\n\n${w.desc}\n\n## What must be true\n${w.criteria.map((c,i)=>`AC${i+1}. ${c}`).join('\n')}`);
+    if(w.status!=='queued')add(wb+`plans/v${w.version}.md`,'The plan the implementer wrote and the verifier reviewed.',`# ${w.id} plan v${w.version}\n\nRisk: ${w.risk}\nImplementer: ${w.executor}\nVerifier: ${other(w.executor)}\n\n## Phases\n${w.phases.map(([t,b],i)=>`${i+1}. ${t}\n   ${b}`).join('\n')}\n\n## Checks\n${w.checks.map(c=>`- ${s.checks[c][0]}: ${s.checks[c][1]}`).join('\n')}\n- Review and hidden scenarios, by ${other(w.executor)}\n\n## Plan review\nNo blocking finding.`);
+    if(w.approved){
+      add(wb+`approvals/v${w.approved}.json`,'Your decision. It binds the plan, the risk level and the checks.',JSON.stringify({decision:'approved',by:'you',plan:'v'+w.approved,risk:w.risk,guideVersion:1,checks:[...w.checks,'review']},null,2));
+      add(wb+'runs/run-001/events.jsonl','The run log. One event per line; everything else is computed from it.',[JSON.stringify({type:'run',version:1,id:'run-001'}),...w.log.map(([t,x],i)=>JSON.stringify({seq:i,type:t,data:{note:x}}))].join('\n'));
+      if(Object.keys(w.results).length)add(wb+`runs/run-001/artifacts/attempt-${w.attempt||1}/checks.json`,'What each check returned, tied to the revision it ran on.',JSON.stringify(Object.fromEntries(Object.entries(w.results).map(([k,r])=>[k,{status:r.status,revision:w.revision}])),null,2));
+      add(wb+'sessions/implementation/context.md','The implementer\'s working notes, saved at each checkpoint.',`# Implementation session\n\nExecutor: ${w.executor}\nPlan: v${w.approved}\nRevision: ${w.revision}\nRepairs: ${w.repairs} of 2\n\n## Next step\n${w.status==='ready'?'Nothing. The change is ready for review.':w.phase==='failed'?'Find the cause of the failed check before changing anything.':'Continue from the last checkpoint.'}`);
+      if(w.results.review)add(wb+'sessions/verification/context.md','The verifier\'s notes. A separate session on a different executor.',`# Verification session\n\nExecutor: ${other(w.executor)}\nRevision: ${w.revision}\n\nEvery criterion checked. 2 hidden scenarios run.`);}}
+  return F;
+}
+function curFile(){const F=fileSet();return F.find(f=>f.path===selFile)||F[0]}
+function renderDoc(){
+  const f=curFile(),b=$('#board');b.className='board docs';b.style.transform='';b.parentElement.style.height='';b.parentElement.style.width='';
+  b.innerHTML=`<div class="doc"><div class="doc-name"><span>${esc(f.path)}</span><span>${f.text.split('\n').length} lines</span></div><pre>${esc(f.text)}</pre></div>`;
+}
+function renderTree(){
+  const F=fileSet(),f=curFile();let h='<div class="sec"><div class="sec-title">On disk</div><div class="tree">',seen=new Set();
+  for(const x of F){const parts=x.path.split('/').filter(Boolean);
+    for(let i=0;i<parts.length-1;i++){const d=parts.slice(0,i+1).join('/');if(seen.has(d))continue;seen.add(d);h+=`<div class="row dir" style="padding-left:${8+i*12}px">${esc(parts[i])}/</div>`}
+    h+=`<button class="row" data-file="${esc(x.path)}" aria-pressed="${x.path===f.path}" style="padding-left:${8+(parts.length-1)*12}px"><span class="grow">${esc(parts.at(-1))}</span></button>`}
+  $('#layers').innerHTML=h+`</div></div><div class="sec"><p class="muted">Files for ${cur()?esc(cur().id):'the selected service'}. They change as the work item moves along the line.</p></div>`;
+}
+function renderFileInspector(){
+  const f=curFile(),name=f.path.split('/').at(-1);
+  $('#inspector').innerHTML=`<div class="sec"><h1>${esc(name)}</h1><p class="muted">${esc(f.about)}</p></div><div class="scroll"><div class="sec"><dl class="field"><dt>Path</dt><dd class="mono">${esc(f.path)}</dd><dt>Kept in</dt><dd>${f.path.startsWith('instances/')?'Service Line\'s working folder, not in Git':f.path.startsWith('workflows/')||f.path.startsWith('skills/')?'The Service Line repository':'The service\'s own repository'}</dd><dt>Written by</dt><dd>${/events|checks\.json|instance/.test(f.path)?'The engine':/approvals/.test(f.path)?'You, recorded by the engine':/plans|sessions/.test(f.path)?'An agent, inside its limits':'People'}</dd></dl></div></div>`;
+}
+function renderOtherTools(){
+  $('#tools').innerHTML=`<button class="btn" data-mode="line">Back to the line</button>${mode==='workflow'?`<span class="sep"></span><button class="ghost" data-act="zoom-out" aria-label="Zoom out">−</button><button class="ghost zoom" data-act="fit" aria-label="Fit to window">${Math.round(zoom*100)}%</button><button class="ghost" data-act="zoom-in" aria-label="Zoom in">+</button>`:''}`;
+}
+function renderBoard(){mode==='workflow'?renderWorkflowBoard():mode==='files'?renderDoc():renderLine()}
+function renderLayers(){mode==='workflow'?renderStateList():mode==='files'?renderTree():renderWorkList()}
+function renderInspector(){mode==='workflow'?renderStateInspector():mode==='files'?renderFileInspector():renderItemInspector()}
+function renderTools(){mode==='line'?renderItemTools():renderOtherTools()}
 function card(w){
   const sel=w.id===selected,st=stageOf(w),v=other(w.executor);
   const who=w.status==='running'?(['implement','repair'].includes(w.phase)?cursor(w.executor,true):w.phase==='review'?cursor(v,true):''):w.status==='changes'?cursor(w.executor,true):'';
   const pin=w.status==='waiting'?`<span class="pin ${tone(v)}" title="Plan review by ${v}">1</span>`:'';
   return `<button class="card" data-item="${w.id}" aria-pressed="${sel}">${sel?'<i class="handle a"></i><i class="handle b"></i><i class="handle c"></i><i class="handle d"></i>':''}${pin}<span class="card-top"><span class="mono">${w.id}</span><span class="risk ${w.risk}">${RISK[w.risk]}</span></span><span class="card-title">${esc(w.title)}</span><span class="card-meta"><span class="dot ${w.phase==='failed'?'failed':w.status}">${w.phase==='failed'?'Check failed':w.phase==='repair'?'Repairing':w.phase==='review'?'Verifier reviewing':STATUS[w.status]}</span></span>${who}</button>`;
 }
-function renderLayers(){
+function renderWorkList(){
   const s=svc(),q=query.toLowerCase(),icon='<svg viewBox="0 0 12 12" aria-hidden="true"><path d="M3 1v10M9 1v10M1 3h10M1 9h10"/></svg>';
   let h=`<div class="sec"><div class="sec-title">Services</div>${Object.entries(services).map(([id,x])=>`<button class="row" data-service="${id}" aria-current="${id===sid}"><span class="grow">${esc(x.name)}</span><span class="muted">${x.items.length}</span></button>`).join('')}</div><div class="sec"><div class="sec-title">Work items<button class="ghost" data-act="new" style="padding:2px 7px">New</button></div>`;
   let any=false;
@@ -309,7 +433,7 @@ function renderLayers(){
   if(!any)h+=`<p class="muted" style="padding:6px 8px">${s.items.length?'No work item matches.':'No work items yet. Create one to see it on the line.'}</p>`;
   $('#layers').innerHTML=h+'</div>';
 }
-function renderInspector(){
+function renderItemInspector(){
   const w=cur(),el=$('#inspector');
   if(!w){el.innerHTML=`<div class="sec"><h1>Nothing selected</h1><p class="muted">Select a work item on the canvas or in the list. Its plan, checks and activity appear here.</p></div>`;return}
   const v=other(w.executor),locked=!!w.approved,g=gate(w);
@@ -328,7 +452,7 @@ function renderInspector(){
   }
   el.innerHTML=`<div class="sec"><div style="display:flex;justify-content:space-between;gap:8px;margin-bottom:6px"><span class="mono muted">${w.id}, ${esc(w.type)}</span><span class="dot ${w.status}">${STATUS[w.status]}</span></div><h1>${esc(w.title)}</h1><p class="muted">${esc(w.desc)}</p></div><div class="tabs" role="tablist">${[['details','Details'],['checks','Checks'],['activity','Activity']].map(([id,l])=>`<button role="tab" data-tab="${id}" aria-selected="${tab===id}">${l}</button>`).join('')}</div><div class="scroll">${body}</div>`;
 }
-function renderTools(){
+function renderItemTools(){
   const w=cur();let main='';
   if(!w)main='<span class="muted" style="padding:0 8px">Select a work item</span>';
   else if(w.status==='queued')main='<button class="btn primary" data-act="draft">Draft plan</button>';
@@ -344,15 +468,20 @@ function renderTop(){
   $('#service').innerHTML=Object.entries(services).map(([id,x])=>`<option value="${id}" ${id===sid?'selected':''}>${esc(x.name)}</option>`).join('');
   const w=cur(),imp=w&&w.status==='running'&&['implement','repair','failed'].includes(w.phase)||w?.status==='changes',ver=w&&w.status==='running'&&w.phase==='review';
   $('#people').innerHTML=`<span class="avatar" style="background:var(--you)" title="You">Y</span>`+(w?`<span class="avatar ${imp?'':'idle'}" style="background:var(--${tone(w.executor)})" title="${w.executor}, implementer">${w.executor[0]}</span><span class="avatar ${ver?'':'idle'}" style="background:var(--${tone(other(w.executor))})" title="${other(w.executor)}, verifier">${other(w.executor)[0]}</span>`:'');
+  $('#modes').innerHTML=[['line','Line'],['workflow','Workflow'],['files','Files']].map(([id,l])=>`<button data-mode="${id}" aria-pressed="${mode===id}">${l}</button>`).join('');$('#search').parentElement.hidden=mode!=='line';
   document.body.dataset.theme=theme;$('#theme').textContent=theme==='dark'?'Light':'Dark';document.title='Service Line, '+svc().name;
 }
 const fitZoom=()=>Math.max(.8,Math.min(1.15,+((innerWidth-(innerWidth>900?590:32))/1166).toFixed(2)));
-function reveal(){const c=$('.card[aria-pressed=true]'),cv=$('#canvas');if(!c||innerWidth<=900)return;const r=c.getBoundingClientRect(),lo=262,hi=innerWidth-318;if(r.left<lo)cv.scrollLeft-=lo-r.left+20;else if(r.right>hi)cv.scrollLeft+=r.right-hi+40}
+function reveal(){const c=$('.card[aria-pressed=true]'),cv=$('#canvas');if(!c||innerWidth<=900||mode==='files')return;const r=c.getBoundingClientRect(),lo=262,hi=innerWidth-318;if(r.left<lo)cv.scrollLeft-=lo-r.left+20;else if(r.right>hi)cv.scrollLeft+=r.right-hi+40}
 function render(){renderTop();renderBoard();renderLayers();renderInspector();renderTools();reveal()}
-function boot(){zoom=fitZoom();$('#canvas').scrollLeft=0;services=seed();sid='appliedin';selected='WI-042';tab='details';query='';scenario='repair';$('#search').value='';render()}
+function boot(){mode='line';zoom=fitZoom();$('#canvas').scrollLeft=0;services=seed();sid='appliedin';selected='WI-042';tab='details';query='';scenario='repair';$('#search').value='';render()}
 
 document.addEventListener('click',e=>{
-  const t=e.target.closest('[data-item],[data-service],[data-tab],[data-risk],[data-act],[data-close]');if(!t)return;
+  const t=e.target.closest('[data-item],[data-service],[data-tab],[data-risk],[data-act],[data-close],[data-mode],[data-state],[data-wftab],[data-file]');if(!t)return;
+  if(t.dataset.mode){mode=t.dataset.mode;$('#canvas').scrollLeft=0;$('#canvas').scrollTop=0;render();return}
+  if(t.dataset.state){selState=t.dataset.state;wfTab='state';render();return}
+  if(t.dataset.wftab){wfTab=t.dataset.wftab;renderInspector();return}
+  if(t.dataset.file){selFile=t.dataset.file;render();return}
   if(t.dataset.close!==undefined){$('#dialog').close();return}
   if(t.dataset.item){selected=t.dataset.item;render();return}
   if(t.dataset.service){sid=t.dataset.service;selected=svc().items[0]?.id||null;tab='details';render();return}
