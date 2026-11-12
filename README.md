@@ -19,9 +19,22 @@ The mock UI uses sample data and resets on reload.
 
 **Intake → Plan → Human approval → Implement → Verify → Ready**
 
-The customer selects Codex or Claude. Approval binds the plan and required checks.
-Failed checks return to bounded repair; missing evidence stops progress. Ready
-means the change has evidence for review, not that it has been merged or deployed.
+The customer selects Codex or Claude. Approval binds the plan, its risk level, and
+the required checks. Failed checks return to bounded repair; missing evidence stops
+progress. Ready means the change has evidence for review, not that it has been
+merged or deployed.
+
+That line is one of four loops in the design:
+
+| Loop | Purpose |
+|---|---|
+| **Change** | Take one work item from Intake to Ready. |
+| **Observe** | After deployment, check that the change behaves as the plan expected. |
+| **Maintain** | Scan the repository on a schedule and propose work items. |
+| **Learn** | Turn past work into reviewed context and lessons. |
+
+Risk level sets how deep verification goes and how much human review Ready needs.
+Every level keeps human plan approval. See the [workflow contract](docs/workflow.md).
 
 ## Six primitives
 
@@ -73,6 +86,7 @@ docs/                              Documentation and mock UI screenshots
 assets/factory-floor.css            Spatial view styles
 assets/factory-floor.js             Spatial view of the shared sample state
 workflows/software-change.asl.json  Proposed workflow; no runtime included
+workflows/post-deploy-observe.asl.json  Proposed observe loop; no runtime included
 templates/                         Per-service verification template
 service-line-ui.html               Interactive mock UI
 service-line.html                  Standalone architecture document

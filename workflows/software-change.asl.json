@@ -9,6 +9,7 @@
       "Next": "Plan"
     },
     "Plan": {
+      "Comment": "The plan includes a risk level (low, medium, high) with reasons. Approval binds it.",
       "Type": "Task",
       "Resource": "service-line:agent.plan",
       "ResultPath": "$.plan",
@@ -44,6 +45,7 @@
       "Next": "RunChecks"
     },
     "RunChecks": {
+      "Comment": "Runs the checks the service guide requires for the approved risk level.",
       "Type": "Task",
       "Resource": "service-line:checks.run",
       "ResultPath": "$.checks",
@@ -56,6 +58,7 @@
       "Next": "Evaluate"
     },
     "Evaluate": {
+      "Comment": "Requires the human review assigned to the approved risk level before a pass.",
       "Type": "Task",
       "Resource": "service-line:verification.evaluate",
       "ResultPath": "$.verification",
@@ -93,6 +96,7 @@
       "Next": "RunChecks"
     },
     "Ready": {
+      "Comment": "Ready for review. After a recorded deployment, post-deploy-observe can start as a second run.",
       "Type": "Succeed"
     },
     "NeedsAttention": {

@@ -12,7 +12,7 @@ The UI calls an instance a **service**. These are two names for the same object.
 | Primitive | Owns | Example |
 |---|---|---|
 | **Instance** | Repository reference, working folder, executor default, work items, verification configuration, local lessons. | AppliedIn |
-| **Work item** | Requested outcome, acceptance criteria, versioned plan, human approval, sessions, runs. | Prevent duplicate applications |
+| **Work item** | Requested outcome, acceptance criteria, versioned plan and risk level, human approval, sessions, runs. | Prevent duplicate applications |
 | **Workflow** | Versioned states, actions, transitions, timeouts, and repair limits. | `software-change` |
 | **Executor** | Adapter for agent invocation, native session references, tool capabilities, and results. | Codex or Claude |
 | **Session** | Conversation for one work item and one executor, `context.md`, checkpoints, history. | Implementation session |
@@ -41,6 +41,10 @@ context handoff; it does not convert the previous provider's conversation.
 States and actions belong to workflows. Checks and artifacts belong to runs.
 Skills are reusable task instructions. Approval is a versioned human decision on
 the work item. Lessons belong to the instance.
+
+Risk level is part of the plan and is approved with it. Post-deploy observation
+is a second run of the same work item with a different workflow. A maintenance
+scan is a scheduled work item whose findings become candidate work items.
 
 The engine owns workflow state. Markdown supplies instructions and memory; editing
 `context.md` cannot approve a plan or mark a run complete.

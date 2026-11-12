@@ -98,6 +98,32 @@ Replace the assertion placeholders. Mark a signal not applicable only with an
 explicit service-specific reason. Verification is inconclusive when a required
 signal is unavailable; an empty log is not evidence that nothing happened.
 
+## Risk levels
+
+The approved plan states a risk level. List the checks each level requires. A
+higher level includes everything below it.
+
+| Risk | Required checks | Human review at Ready |
+|---|---|---|
+| Low | `<CHECK and FLOW IDs>` | `<evidence summary>` |
+| Medium | `<adds security review and dependent-caller checks>` | `<diff and evidence>` |
+| High | `<adds full journeys, replays, and dependent-service checks>` | `<named reviewer records acceptance>` |
+
+Name the paths that are always high risk, such as authentication, payments, data
+migrations, and public interfaces.
+
+## Post-deploy signals
+
+Read-only. Used after a recorded deployment of the verified revision.
+
+| Signal | Source | Window | Confirms the change when |
+|---|---|---|---|
+| `<error rate for the changed path>` | `<metrics query>` | `<duration>` | `<threshold or comparison with the previous revision>` |
+| `<relevant log event or trace>` | `<log or trace query>` | `<duration>` | `<expected events; no unexplained errors>` |
+
+State which signals are required. Observation is inconclusive when a required
+signal is unavailable. It never rolls back, changes a flag, or widens a rollout.
+
 ## Evidence bundle
 
 Write under the run's verification attempt directory:

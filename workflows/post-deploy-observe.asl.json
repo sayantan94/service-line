@@ -1,0 +1,64 @@
+{
+  "Comment": "Proposed Service Line workflow for observing a verified change after deployment. Read-only: it never rolls back, changes flags, or widens a rollout. Custom resources require an unimplemented runtime; this file is not an executable integration.",
+  "StartAt": "AwaitDeployment",
+  "States": {
+    "AwaitDeployment": {
+      "Comment": "Waits for a recorded deployment whose revision matches the verified code snapshot.",
+      "Type": "Task",
+      "Resource": "service-line:deployment.wait",
+      "ResultPath": "$.deployment",
+      "Next": "Observe"
+    },
+    "Observe": {
+      "Comment": "Reads the production signals named in the service guide for a bounded window.",
+      "Type": "Task",
+      "Resource": "service-line:agent.observe",
+      "ResultPath": "$.observation",
+      "TimeoutSeconds": 3600,
+      "Next": "Evaluate"
+    },
+    "Evaluate": {
+      "Comment": "Compares captured signals with the outcomes the approved plan expected.",
+      "Type": "Task",
+      "Resource": "service-line:observation.evaluate",
+      "ResultPath": "$.result",
+      "Next": "Route"
+    },
+    "Route": {
+      "Type": "Choice",
+      "Choices": [
+        {
+          "Variable": "$.result.verdict",
+          "StringEquals": "confirmed",
+          "Next": "Confirmed"
+        },
+        {
+          "Variable": "$.result.verdict",
+          "StringEquals": "regressed",
+          "Next": "ProposeWorkItem"
+        }
+      ],
+      "Default": "NeedsAttention"
+    },
+    "ProposeWorkItem": {
+      "Comment": "Proposes a candidate work item at Intake with the observation evidence. A human decides on rollback.",
+      "Type": "Task",
+      "Resource": "service-line:workitem.propose",
+      "ResultPath": "$.followUp",
+      "Next": "Regressed"
+    },
+    "Confirmed": {
+      "Type": "Succeed"
+    },
+    "Regressed": {
+      "Type": "Fail",
+      "Error": "ChangeRegressed",
+      "Cause": "Production signals contradict the outcomes the approved plan expected."
+    },
+    "NeedsAttention": {
+      "Type": "Fail",
+      "Error": "ObservationNeedsAttention",
+      "Cause": "Required production signals are unavailable or inconclusive."
+    }
+  }
+}

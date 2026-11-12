@@ -253,6 +253,8 @@ verification:
         <li><strong>Approval is enforced by the engine.</strong> Implementation waits for a recorded human decision on the current plan.</li>
         <li><strong>Retry and repair are separate.</strong> Execution failures use <code>Retry</code>/<code>Catch</code>. Failed checks route to repair through <code>Choice</code>.</li>
         <li><strong>Completion requires evidence.</strong> An agent finishing a turn does not establish that the work item is correct.</li>
+        <li><strong>Risk sets the depth.</strong> Each plan states a low, medium, or high risk level, approved with the plan. It decides which checks and how much human review are required. Every level keeps plan approval.</li>
+        <li><strong>The line is one of four loops.</strong> A read-only observe run checks a change after a recorded deployment. A scheduled maintenance work item scans the repository and proposes work items. Learning turns past work into reviewed lessons.</li>
       </ul>
       <details>
         <summary>Example: implementation after plan approval</summary>
