@@ -11,7 +11,7 @@ the workflow engine, durable storage, and real verification are not implemented.
 The mock UI uses sample data and resets on reload.
 
 [Documentation](https://sayantan94.github.io/service-line/docs/) ·
-[Runtime diagrams](https://sayantan94.github.io/service-line/service-line-runtime.html) ·
+[Runtime design](https://sayantan94.github.io/service-line/design/) ·
 [Try the mock UI](https://sayantan94.github.io/service-line/service-line-ui.html)
 
 ![Service Line stage-by-stage board](docs/assets/factory-line.png)
@@ -92,7 +92,7 @@ workflows/post-deploy-observe.asl.json  Proposed observe loop; no runtime includ
 templates/                         Per-service verification template
 service-line-ui.html               Interactive mock UI
 service-line.html                  Standalone architecture document
-service-line-runtime.html          Runtime design in diagrams
+design/                            Runtime design: one overview diagram and a page per part
 service-line-verification.md       Verification contract for this prototype
 ```
 

@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Agents and limits · Service Line runtime design</title>
+<meta name="description" content="How the engine drives Claude and Codex, what each step may touch, and the guards against a stuck agent.">
+<link rel="stylesheet" href="design.css">
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="brand"><span>SL</span>Service Line · Runtime design</div>
+    <h1>Agents and limits</h1>
+    <p class="lede">How the engine drives Claude and Codex, what each step may touch, and the guards against a stuck agent.</p>
+  </header>
+  <nav class="pages" aria-label="Design pages"><a href="index.html">Overview</a><a href="parts.html">Parts</a><a href="steps.html">Steps</a><a href="run-log.html">Run log and recovery</a><a href="agents.html" aria-current="page">Agents and limits</a><a href="verification.html">Verification</a><a href="learning.html">Learning</a><a href="loops.html">Loops and workflows</a><a href="sources.html">Sources</a></nav>
+
+  <section>
+    <h2>Driving the agents and limiting them</h2>
+    <figure>
+      <div class="scroll"><svg viewBox="0 0 1000 330" role="img" aria-label="The engine hands each step, its skills and its limits to an adapter: the Claude Agent SDK or the Codex app-server. Both work in the work item checkout and return a result with output, stop reason and diagnostic. The engine runs checks through a sandbox wrapper. Hidden scenarios sit outside the checkout where the implementer cannot read them."><defs><marker id="ar9" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="mh"/></marker><marker id="ar9w" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="mw"/></marker></defs><rect class="b" x="20" y="110" width="170" height="110" rx="8"/><text class="t" x="105" y="138" text-anchor="middle">Engine</text><text class="s" x="105" y="160" text-anchor="middle">limits per step</text><text class="s" x="105" y="178" text-anchor="middle">time limit</text><text class="s" x="105" y="196" text-anchor="middle">stuck-agent guards</text><rect class="ag" x="290" y="40" width="220" height="70" rx="8"/><text class="t" x="400" y="70" text-anchor="middle">Claude · Agent SDK</text><text class="s" x="400" y="90" text-anchor="middle">permission check in engine code</text><rect class="ag" x="290" y="220" width="220" height="70" rx="8"/><text class="t" x="400" y="250" text-anchor="middle">Codex · app-server</text><text class="s" x="400" y="270" text-anchor="middle">sandbox mode, approvals declined</text><text class="l" x="400" y="160" text-anchor="middle">each run returns</text><text class="l" x="400" y="176" text-anchor="middle">output · stop reason · diagnostic</text><rect class="b" x="640" y="40" width="340" height="70" rx="8"/><text class="t" x="810" y="70" text-anchor="middle">Work item checkout</text><text class="s" x="810" y="90" text-anchor="middle">the only place the implementer can write</text><rect class="wb" x="640" y="130" width="340" height="70" rx="8"/><text class="t" x="810" y="160" text-anchor="middle">Hidden scenarios</text><text class="s" x="810" y="180" text-anchor="middle">outside the checkout; only the verifier may read</text><rect class="b" x="640" y="220" width="340" height="70" rx="8"/><text class="t" x="810" y="250" text-anchor="middle">Sandbox wrapper</text><text class="s" x="810" y="270" text-anchor="middle">writes outside the allowed folders fail</text><path class="a" d="M190,150 H240 V75 H288" marker-end="url(#ar9)"/><path class="a" d="M190,180 H240 V255 H288" marker-end="url(#ar9)"/><text class="l" x="236" y="60" text-anchor="middle">step, skills, limits</text><line class="a" x1="510" y1="65" x2="638" y2="65" marker-end="url(#ar9)"/><text class="l" x="574" y="57" text-anchor="middle">works in</text><path class="a" d="M510,255 H575 V92 H638" marker-end="url(#ar9)"/><path class="a" d="M105,220 V312 H810 V292" marker-end="url(#ar9)"/><text class="l" x="450" y="306" text-anchor="middle">runs checks and service commands through</text></svg></div>
+      <figcaption>Agents are driven through structured interfaces, not by reading terminal output. A step counts as complete only on one successful result with content; an exit or silence is a failure. Unattended agents can't ask anyone, so any request for approval is declined.</figcaption>
+    </figure>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>Step</th><th>May write</th><th>May run</th></tr></thead>
+        <tbody>
+          <tr><td>Research, plan</td><td>Its notes or the plan only</td><td>Read-only commands</td></tr>
+          <tr><td>Plan review</td><td>Findings only</td><td>Read-only commands</td></tr>
+          <tr><td>Implement, repair</td><td>Its own checkout</td><td>Commands inside the checkout</td></tr>
+          <tr><td>Verify</td><td>A scratch folder and disposable test state</td><td>The service and its checks</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section>
+    <h2>Guards against a stuck agent</h2>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>Guard</th><th>Trigger</th><th>Result</th></tr></thead>
+        <tbody>
+          <tr><td>Repeated call</td><td>The same tool call with the same arguments, several times in a row</td><td>A reminder first; at the limit the step ends</td></tr>
+          <tr><td>No progress</td><td>The checkout is unchanged across two rounds</td><td>The step ends</td></tr>
+          <tr><td>Phase cap</td><td>More rounds than the plan has phases, plus a margin</td><td>The step ends</td></tr>
+          <tr><td>Time limit</td><td>The step's time limit expires</td><td>The agent is stopped</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="lede">A step ended by a guard goes to Needs attention and does not use up a repair.</p>
+  </section>
+</div>
+</body>
+</html>

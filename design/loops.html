@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Loops and workflows · Service Line runtime design</title>
+<meta name="description" content="The four loops and the order the workflows arrive in.">
+<link rel="stylesheet" href="design.css">
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="brand"><span>SL</span>Service Line · Runtime design</div>
+    <h1>Loops and workflows</h1>
+    <p class="lede">The four loops and the order the workflows arrive in.</p>
+  </header>
+  <nav class="pages" aria-label="Design pages"><a href="index.html">Overview</a><a href="parts.html">Parts</a><a href="steps.html">Steps</a><a href="run-log.html">Run log and recovery</a><a href="agents.html">Agents and limits</a><a href="verification.html">Verification</a><a href="learning.html">Learning</a><a href="loops.html" aria-current="page">Loops and workflows</a><a href="sources.html">Sources</a></nav>
+
+  <section>
+    <h2>The four loops</h2>
+    <figure>
+      <div class="scroll">
+        <svg viewBox="0 0 1000 340" role="img" aria-label="The change loop sits in the centre. A scheduled maintenance scan proposes work items into it. After you merge and deploy, the observe loop reads production signals and files a new work item on a regression. The learn loop takes evidence and corrections from the change loop and returns reviewed lessons for the next plan.">
+          <defs>
+            <marker id="ar3" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="mh"/></marker>
+            <marker id="ar3w" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="mw"/></marker>
+          </defs>
+          <rect class="b" x="360" y="30" width="200" height="60" rx="8"/>
+          <text class="t" x="460" y="56" text-anchor="middle">Learn</text>
+          <text class="s" x="460" y="74" text-anchor="middle">dreaming, between work items</text>
+          <rect class="b" x="20" y="150" width="150" height="80" rx="8"/>
+          <text class="t" x="95" y="184" text-anchor="middle">Maintain</text>
+          <text class="s" x="95" y="204" text-anchor="middle">scan on a schedule</text>
+          <rect class="b" x="270" y="150" width="380" height="80" rx="8"/>
+          <text class="t" x="460" y="184" text-anchor="middle">Change</text>
+          <text class="s" x="460" y="204" text-anchor="middle">Intake → Plan → Approval → Implement → Verify → Ready</text>
+          <rect class="h" x="720" y="150" width="110" height="80" rx="8"/>
+          <text class="t" x="775" y="184" text-anchor="middle">You merge</text>
+          <text class="t" x="775" y="202" text-anchor="middle">and deploy</text>
+          <rect class="b" x="880" y="150" width="100" height="80" rx="8"/>
+          <text class="t" x="930" y="184" text-anchor="middle">Observe</text>
+          <text class="s" x="930" y="204" text-anchor="middle">live signals</text>
+          <line class="a" x1="170" y1="190" x2="268" y2="190" marker-end="url(#ar3)"/>
+          <text class="l" x="220" y="182" text-anchor="middle">proposes items</text>
+          <line class="a" x1="650" y1="190" x2="718" y2="190" marker-end="url(#ar3)"/>
+          <text class="l" x="685" y="182" text-anchor="middle">ready</text>
+          <line class="a" x1="830" y1="190" x2="878" y2="190" marker-end="url(#ar3)"/>
+          <line class="a" x1="520" y1="150" x2="520" y2="92" marker-end="url(#ar3)"/>
+          <text class="l" x="528" y="126">evidence, corrections</text>
+          <line class="a" x1="400" y1="90" x2="400" y2="148" marker-end="url(#ar3)"/>
+          <text class="l" x="392" y="126" text-anchor="end">lessons for the next plan</text>
+          <path class="aw" d="M930,230 V296 H330 V232" marker-end="url(#ar3w)"/>
+          <text class="lw" x="630" y="314" text-anchor="middle">regression: new work item at Intake</text>
+        </svg>
+      </div>
+      <figcaption>Maintain and Observe never change code themselves. They create work items, and each one goes through the same approval and evidence gate.</figcaption>
+    </figure>
+  </section>
+
+  <section>
+    <h2>Workflows, in the order they arrive</h2>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>Milestone</th><th>Workflow</th><th>What it adds</th></tr></thead>
+        <tbody>
+          <tr><td>1</td><td><code>software-change</code></td><td>The default line shown above.</td></tr>
+          <tr><td>2</td><td><code>bug-fix</code>, <code>refactor</code>, <code>new-product</code></td><td>Reproduce first, prove behaviour unchanged, or design and scaffold before the line.</td></tr>
+          <tr><td>3</td><td><code>maintenance-scan</code>, <code>post-deploy-observe</code></td><td>A scheduler, and runs that can propose work items.</td></tr>
+          <tr><td>4</td><td><code>dreaming</code>, generated workflows</td><td>Reviewed memory, and drafting a new workflow from a description.</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="lede">A generated workflow is checked by the engine and approved by you before it can run.</p>
+  </section>
+</div>
+</body>
+</html>

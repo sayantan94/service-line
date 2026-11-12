@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Parts · Service Line runtime design</title>
+<meta name="description" content="You, the engine, the two agents, the store and the repository, and what passes between them.">
+<link rel="stylesheet" href="design.css">
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="brand"><span>SL</span>Service Line · Runtime design</div>
+    <h1>Parts</h1>
+    <p class="lede">You, the engine, the two agents, the store and the repository, and what passes between them.</p>
+  </header>
+  <nav class="pages" aria-label="Design pages"><a href="index.html">Overview</a><a href="parts.html" aria-current="page">Parts</a><a href="steps.html">Steps</a><a href="run-log.html">Run log and recovery</a><a href="agents.html">Agents and limits</a><a href="verification.html">Verification</a><a href="learning.html">Learning</a><a href="loops.html">Loops and workflows</a><a href="sources.html">Sources</a></nav>
+
+  <section>
+    <h2>The parts and what passes between them</h2>
+    <figure>
+      <div class="scroll">
+        <svg viewBox="0 0 1000 510" role="img" aria-label="You talk to the engine through the UI. The engine holds the queue, workflow runner, policy and evidence gate. It hands steps to an implementer agent and a different verifier agent, which work in a separate checkout of the service repository. The engine saves every step to the store.">
+          <defs>
+            <marker id="ar1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="mh"/></marker>
+          </defs>
+          <!-- you -->
+          <rect class="h" x="20" y="70" width="150" height="200" rx="8"/>
+          <text class="t" x="95" y="100" text-anchor="middle">You</text>
+          <text class="s" x="95" y="120" text-anchor="middle">in the UI</text>
+          <text class="s" x="95" y="158" text-anchor="middle">request work</text>
+          <text class="s" x="95" y="180" text-anchor="middle">approve plans</text>
+          <text class="s" x="95" y="202" text-anchor="middle">review evidence</text>
+          <text class="s" x="95" y="224" text-anchor="middle">stop everything</text>
+          <!-- workflows -->
+          <rect class="b" x="20" y="300" width="150" height="60" rx="8"/>
+          <text class="t" x="95" y="326" text-anchor="middle">Workflows</text>
+          <text class="s" x="95" y="344" text-anchor="middle">versioned ASL files</text>
+          <!-- engine -->
+          <rect class="g" x="290" y="40" width="380" height="300" rx="10"/>
+          <text class="t" x="304" y="66">Engine</text>
+          <rect class="b" x="304" y="84" width="165" height="90" rx="8"/>
+          <text class="t" x="386" y="120" text-anchor="middle">Queue</text>
+          <text class="s" x="386" y="140" text-anchor="middle">which item runs next</text>
+          <rect class="b" x="487" y="84" width="165" height="90" rx="8"/>
+          <text class="t" x="569" y="120" text-anchor="middle">Workflow runner</text>
+          <text class="s" x="569" y="140" text-anchor="middle">one step at a time</text>
+          <rect class="b" x="304" y="196" width="165" height="90" rx="8"/>
+          <text class="t" x="386" y="226" text-anchor="middle">Policy</text>
+          <text class="s" x="386" y="246" text-anchor="middle">permissions per step</text>
+          <text class="s" x="386" y="262" text-anchor="middle">risk level, stop switch</text>
+          <rect class="b" x="487" y="196" width="165" height="90" rx="8"/>
+          <text class="t" x="569" y="226" text-anchor="middle">Evidence gate</text>
+          <text class="s" x="569" y="246" text-anchor="middle">complete and current,</text>
+          <text class="s" x="569" y="262" text-anchor="middle">or no pass</text>
+          <!-- agents -->
+          <rect class="b" x="770" y="70" width="210" height="90" rx="8"/>
+          <text class="t" x="875" y="106" text-anchor="middle">Implementer</text>
+          <text class="s" x="875" y="126" text-anchor="middle">Claude or Codex</text>
+          <rect class="b" x="770" y="210" width="160" height="90" rx="8"/>
+          <text class="t" x="850" y="240" text-anchor="middle">Verifier</text>
+          <text class="s" x="850" y="260" text-anchor="middle">the other agent</text>
+          <text class="s" x="850" y="276" text-anchor="middle">cannot edit</text>
+          <!-- store and repo -->
+          <rect class="b" x="290" y="400" width="380" height="90" rx="8"/>
+          <text class="t" x="480" y="432" text-anchor="middle">Store</text>
+          <text class="s" x="480" y="452" text-anchor="middle">plans · approvals · run state · sessions</text>
+          <text class="s" x="480" y="468" text-anchor="middle">evidence · lessons</text>
+          <rect class="b" x="770" y="400" width="210" height="90" rx="8"/>
+          <text class="t" x="875" y="436" text-anchor="middle">Service repository</text>
+          <text class="s" x="875" y="456" text-anchor="middle">one checkout per work item</text>
+          <!-- arrows -->
+          <line class="a" x1="170" y1="130" x2="288" y2="130" marker-end="url(#ar1)"/>
+          <text class="l" x="230" y="122" text-anchor="middle">asks, approves</text>
+          <line class="a" x1="290" y1="200" x2="172" y2="200" marker-end="url(#ar1)"/>
+          <text class="l" x="230" y="192" text-anchor="middle">needs you, ready</text>
+          <line class="a" x1="170" y1="330" x2="288" y2="330" marker-end="url(#ar1)"/>
+          <text class="l" x="230" y="322" text-anchor="middle">run pins a version</text>
+          <line class="a" x1="670" y1="105" x2="768" y2="105" marker-end="url(#ar1)"/>
+          <text class="l" x="720" y="97" text-anchor="middle">step and rules</text>
+          <line class="a" x1="770" y1="135" x2="672" y2="135" marker-end="url(#ar1)"/>
+          <text class="l" x="720" y="151" text-anchor="middle">result</text>
+          <line class="a" x1="670" y1="245" x2="768" y2="245" marker-end="url(#ar1)"/>
+          <text class="l" x="720" y="237" text-anchor="middle">diff and results</text>
+          <line class="a" x1="770" y1="275" x2="672" y2="275" marker-end="url(#ar1)"/>
+          <text class="l" x="720" y="291" text-anchor="middle">findings</text>
+          <line class="a" x1="450" y1="340" x2="450" y2="398" marker-end="url(#ar1)"/>
+          <text class="l" x="440" y="374" text-anchor="end">saves before and after each step</text>
+          <line class="a" x1="510" y1="400" x2="510" y2="342" marker-end="url(#ar1)"/>
+          <text class="l" x="520" y="374">resumes after a crash</text>
+          <line class="a" x1="955" y1="160" x2="955" y2="398" marker-end="url(#ar1)"/>
+          <text class="l" x="947" y="345" text-anchor="end">edits</text>
+          <line class="a" x1="850" y1="300" x2="850" y2="398" marker-end="url(#ar1)"/>
+          <text class="l" x="842" y="372" text-anchor="end">reads, runs checks</text>
+        </svg>
+      </div>
+      <figcaption>The agents never talk to each other or to you. Every step goes through the engine, which decides what each agent may touch and records the result before moving on.</figcaption>
+    </figure>
+  </section>
+</div>
+</body>
+</html>

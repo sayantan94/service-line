@@ -8,7 +8,7 @@ Keep claims about implemented behavior separate from the proposed runtime.
 - `service-line-ui.html`: UI shell, shared styles, and sample state.
 - `assets/factory-floor.*`: spatial overview of the same sample state.
 - `service-line.html`: standalone architecture document.
-- `service-line-runtime.html`: runtime design in diagrams; keep it in step with `docs/runtime.md`.
+- `design/*.html`: runtime design in diagrams. `index.html` is the single overview; the other pages cover one part each. Keep them in step with `docs/runtime.md`.
 - `docs/*.md`: documentation served by GitHub Pages and readable on GitHub.
 - `_layouts/docs.html` and `docs/assets/docs.css`: documentation layout and styling.
 - `docs/assets/*.dot`: diagram sources; render matching SVGs with `dot -Tsvg input.dot -o output.svg`.

@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sources · Service Line runtime design</title>
+<meta name="description" content="What the design takes from other systems.">
+<link rel="stylesheet" href="design.css">
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="brand"><span>SL</span>Service Line · Runtime design</div>
+    <h1>Sources</h1>
+    <p class="lede">What the design takes from other systems.</p>
+  </header>
+  <nav class="pages" aria-label="Design pages"><a href="index.html">Overview</a><a href="parts.html">Parts</a><a href="steps.html">Steps</a><a href="run-log.html">Run log and recovery</a><a href="agents.html">Agents and limits</a><a href="verification.html">Verification</a><a href="learning.html">Learning</a><a href="loops.html">Loops and workflows</a><a href="sources.html" aria-current="page">Sources</a></nav>
+
+  <section>
+    <h2>What the search changed</h2>
+    <ul class="found">
+      <li><strong>Every step is marked agent or engine.</strong> Stripe's agents run on templates where formatting, linting and tests are fixed code and only the thinking is left to the agent. <a href="https://stripe.dev/blog/minions-stripes-one-shot-end-to-end-coding-agents">Stripe</a>, <a href="https://blog.bytebytego.com/p/how-stripes-minions-ship-1300-prs">ByteByteGo</a></li>
+      <li><strong>Two repairs, then stop.</strong> Stripe caps its retry rounds at two for the same reason. <a href="https://www.mindstudio.ai/blog/stripe-minions-blueprint-architecture-deterministic-agentic-nodes">MindStudio</a></li>
+      <li><strong>Hidden scenarios.</strong> StrongDM keeps its test scenarios where the coding agent cannot read them, so the agent cannot build to the test. <a href="https://simonwillison.net/2026/Feb/7/software-factory">Simon Willison</a></li>
+      <li><strong>Research before Plan, and plans in small phases.</strong> Both are common in published agent workflows. <a href="https://www.edenai.co/post/how-to-build-an-open-source-software-factory">Eden AI</a>, <a href="https://playbooks.com/skills/ed3dai/ed3d-plugins/writing-implementation-plans">Playbooks</a></li>
+      <li><strong>A fresh agent reviews.</strong> An agent reviewing its own work misses its own mistakes, which is why the plan review and Verify use the other agent. <a href="https://playbooks.com/skills/mhylle/claude-skills-collection/implement-phase">Playbooks</a></li>
+      <li><strong>No workflow server.</strong> For one machine, saving state at each step boundary is enough; a server such as Temporal is more than this needs. <a href="https://tianpan.co/blog/2026-04-23-durable-agents-async-queue-workflow-checkpoint">Tian Pan</a>, <a href="https://www.developersdigest.tech/blog/durable-execution-for-ai-agents">Developers Digest</a></li>
+      <li><strong>Run log, recovery, sandbox, guards and the agent contract.</strong> These follow the source code of an open-source agent harness. Service Line adds a time limit per step and a hard stop for stuck agents, which that harness leaves out. <a href="https://github.com/deepseek-ai/deepseek-harness">DeepSeek Harness</a></li>
+      <li><strong>Reset before retrying.</strong> Re-running an agent on a half-changed checkout gives different edits each time, so a retry starts from the last checkpoint. <a href="https://engineering-playbook.vercel.app/claude-code/the-claude-agent-sdk">Engineering Playbook</a></li>
+    </ul>
+    <p class="lede">Except for the harness, which was read at source level, these come from write-ups about those systems, several of them second-hand.</p>
+  </section>
+</div>
+</body>
+</html>

@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Verification · Service Line runtime design</title>
+<meta name="description" content="From the service guide to the evidence gate.">
+<link rel="stylesheet" href="design.css">
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="brand"><span>SL</span>Service Line · Runtime design</div>
+    <h1>Verification</h1>
+    <p class="lede">From the service guide to the evidence gate.</p>
+  </header>
+  <nav class="pages" aria-label="Design pages"><a href="index.html">Overview</a><a href="parts.html">Parts</a><a href="steps.html">Steps</a><a href="run-log.html">Run log and recovery</a><a href="agents.html">Agents and limits</a><a href="verification.html" aria-current="page">Verification</a><a href="learning.html">Learning</a><a href="loops.html">Loops and workflows</a><a href="sources.html">Sources</a></nav>
+
+  <section>
+    <h2>How verification works</h2>
+    <figure>
+      <div class="scroll">
+        <svg viewBox="0 0 1000 370" role="img" aria-label="The service guide, the approved plan and the code snapshot go into exercising the service with commands, a browser, traffic replay and observations. That produces an evidence bundle and a review by the other agent. The evidence gate then sends the work item to Ready, to repair, or to Needs attention.">
+          <defs>
+            <marker id="ar4" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="mh"/></marker>
+            <marker id="ar4w" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="mw"/></marker>
+          </defs>
+          <rect class="b" x="20" y="40" width="160" height="56" rx="7"/>
+          <text class="t" x="100" y="64" text-anchor="middle">Service guide</text><text class="s" x="100" y="82" text-anchor="middle">kept in the service's repo</text>
+          <rect class="h" x="20" y="116" width="160" height="56" rx="7"/>
+          <text class="t" x="100" y="140" text-anchor="middle">Approved plan</text><text class="s" x="100" y="158" text-anchor="middle">criteria and risk level</text>
+          <rect class="b" x="20" y="192" width="160" height="56" rx="7"/>
+          <text class="t" x="100" y="216" text-anchor="middle">Code snapshot</text><text class="s" x="100" y="234" text-anchor="middle">the exact change</text>
+          <line class="a" x1="180" y1="68" x2="268" y2="68" marker-end="url(#ar4)"/><text class="l" x="224" y="60" text-anchor="middle">what to run</text>
+          <line class="a" x1="180" y1="144" x2="268" y2="144" marker-end="url(#ar4)"/><text class="l" x="224" y="136" text-anchor="middle">what must hold</text>
+          <line class="a" x1="180" y1="220" x2="268" y2="220" marker-end="url(#ar4)"/><text class="l" x="224" y="212" text-anchor="middle">what to test</text>
+          <rect class="g" x="270" y="30" width="300" height="230" rx="10"/>
+          <text class="t" x="284" y="53">Exercise the service</text>
+          <rect class="b" x="284" y="64" width="130" height="70" rx="7"/>
+          <text class="t" x="349" y="94" text-anchor="middle">Commands</text><text class="s" x="349" y="112" text-anchor="middle">tests and build</text>
+          <rect class="b" x="426" y="64" width="130" height="70" rx="7"/>
+          <text class="t" x="491" y="94" text-anchor="middle">Browser</text><text class="s" x="491" y="112" text-anchor="middle">click, type, reload</text>
+          <rect class="b" x="284" y="150" width="130" height="70" rx="7"/>
+          <text class="t" x="349" y="180" text-anchor="middle">Traffic replay</text><text class="s" x="349" y="198" text-anchor="middle">isolated backend</text>
+          <rect class="b" x="426" y="150" width="130" height="70" rx="7"/>
+          <text class="t" x="491" y="180" text-anchor="middle">Observations</text><text class="s" x="491" y="198" text-anchor="middle">logs, traces, state</text>
+          <text class="s" x="420" y="244" text-anchor="middle">higher risk runs more of these</text>
+          <rect class="b" x="640" y="40" width="150" height="60" rx="7"/>
+          <text class="t" x="715" y="65" text-anchor="middle">Evidence bundle</text><text class="s" x="715" y="83" text-anchor="middle">captures and hashes</text>
+          <rect class="b" x="640" y="120" width="150" height="60" rx="7"/>
+          <text class="t" x="715" y="145" text-anchor="middle">Verifier review</text><text class="s" x="715" y="163" text-anchor="middle">verdict per criterion</text>
+          <line class="a" x1="570" y1="70" x2="638" y2="70" marker-end="url(#ar4)"/><text class="l" x="604" y="62" text-anchor="middle">captures</text>
+          <line class="a" x1="570" y1="150" x2="638" y2="150" marker-end="url(#ar4)"/><text class="l" x="604" y="142" text-anchor="middle">results</text>
+          <line class="a" x1="715" y1="100" x2="715" y2="118" marker-end="url(#ar4)"/>
+          <rect class="b" x="850" y="75" width="130" height="70" rx="7"/>
+          <text class="t" x="915" y="105" text-anchor="middle">Evidence gate</text><text class="s" x="915" y="123" text-anchor="middle">engine decides</text>
+          <path class="a" d="M790,70 H820 V95 H848" marker-end="url(#ar4)"/>
+          <path class="a" d="M790,150 H820 V125 H848" marker-end="url(#ar4)"/>
+          <path class="aw" d="M870,145 V215 H535 V298" marker-end="url(#ar4w)"/>
+          <text class="lw" x="690" y="207" text-anchor="middle">evidence missing or out of date</text>
+          <path class="aw" d="M900,145 V250 H735 V298" marker-end="url(#ar4w)"/>
+          <text class="lw" x="815" y="242" text-anchor="middle">a check failed</text>
+          <line class="a" x1="940" y1="145" x2="940" y2="298" marker-end="url(#ar4)"/>
+          <text class="l" x="948" y="200">all pass</text>
+          <rect class="wb" x="460" y="300" width="150" height="44" rx="7"/><text class="t" x="535" y="327" text-anchor="middle">Needs attention</text>
+          <rect class="wb" x="660" y="300" width="150" height="44" rx="7"/><text class="t" x="735" y="327" text-anchor="middle">Repair</text>
+          <rect class="h" x="880" y="300" width="100" height="44" rx="7"/><text class="t" x="930" y="327" text-anchor="middle">Ready</text>
+          <text class="s" x="535" y="362" text-anchor="middle">you decide</text>
+          <text class="s" x="735" y="362" text-anchor="middle">then verify the new snapshot</text>
+          <text class="s" x="930" y="362" text-anchor="middle">you review</text>
+        </svg>
+      </div>
+      <figcaption>The verifier is a different agent from the one that wrote the change, and it cannot edit code. An agent saying "done" counts for nothing; only evidence tied to the current snapshot passes the gate.</figcaption>
+    </figure>
+  </section>
+</div>
+</body>
+</html>

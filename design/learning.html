@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Learning · Service Line runtime design</title>
+<meta name="description" content="How finished work becomes reviewed lessons.">
+<link rel="stylesheet" href="design.css">
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="brand"><span>SL</span>Service Line · Runtime design</div>
+    <h1>Learning</h1>
+    <p class="lede">How finished work becomes reviewed lessons.</p>
+  </header>
+  <nav class="pages" aria-label="Design pages"><a href="index.html">Overview</a><a href="parts.html">Parts</a><a href="steps.html">Steps</a><a href="run-log.html">Run log and recovery</a><a href="agents.html">Agents and limits</a><a href="verification.html">Verification</a><a href="learning.html" aria-current="page">Learning</a><a href="loops.html">Loops and workflows</a><a href="sources.html">Sources</a></nav>
+
+  <section>
+    <h2>How learning works</h2>
+    <figure>
+      <div class="scroll">
+        <svg viewBox="0 0 1000 270" role="img" aria-label="Finished runs are captured as candidates, consolidated, validated in a checkout, reviewed by you and published as a new memory version. The next work item loads what applies, and its evidence becomes new candidates. A rejected or edited change goes back to consolidation.">
+          <defs>
+            <marker id="ar5" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="mh"/></marker>
+            <marker id="ar5w" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="mw"/></marker>
+          </defs>
+          <rect class="b" x="20" y="110" width="130" height="60" rx="7"/>
+          <text class="t" x="85" y="135" text-anchor="middle">Capture</text><text class="s" x="85" y="153" text-anchor="middle">from finished runs</text>
+          <rect class="b" x="180" y="110" width="130" height="60" rx="7"/>
+          <text class="t" x="245" y="135" text-anchor="middle">Consolidate</text><text class="s" x="245" y="153" text-anchor="middle">merge, flag conflicts</text>
+          <rect class="b" x="340" y="110" width="130" height="60" rx="7"/>
+          <text class="t" x="405" y="135" text-anchor="middle">Validate</text><text class="s" x="405" y="153" text-anchor="middle">test in a checkout</text>
+          <rect class="h" x="500" y="110" width="130" height="60" rx="7"/>
+          <text class="t" x="565" y="135" text-anchor="middle">Review</text><text class="s" x="565" y="153" text-anchor="middle">you read the diff</text>
+          <rect class="b" x="660" y="110" width="130" height="60" rx="7"/>
+          <text class="t" x="725" y="135" text-anchor="middle">Publish</text><text class="s" x="725" y="153" text-anchor="middle">a new version</text>
+          <rect class="b" x="840" y="110" width="140" height="60" rx="7"/>
+          <text class="t" x="910" y="135" text-anchor="middle">Next work item</text><text class="s" x="910" y="153" text-anchor="middle">loads what applies</text>
+          <line class="a" x1="150" y1="140" x2="178" y2="140" marker-end="url(#ar5)"/>
+          <line class="a" x1="310" y1="140" x2="338" y2="140" marker-end="url(#ar5)"/>
+          <line class="a" x1="470" y1="140" x2="498" y2="140" marker-end="url(#ar5)"/>
+          <line class="a" x1="630" y1="140" x2="658" y2="140" marker-end="url(#ar5)"/>
+          <line class="a" x1="790" y1="140" x2="838" y2="140" marker-end="url(#ar5)"/>
+          <path class="aw" d="M565,110 V60 H245 V108" marker-end="url(#ar5w)"/>
+          <text class="lw" x="405" y="52" text-anchor="middle">rejected or edited: revise and validate again</text>
+          <path class="a" d="M910,170 V226 H85 V172" marker-end="url(#ar5)"/>
+          <text class="l" x="500" y="246" text-anchor="middle">its evidence and your corrections become new candidates</text>
+        </svg>
+      </div>
+      <figcaption>Learning changes what the agents are told, not the models. A lesson that fails validation is never published, old versions are kept so a bad lesson can be rolled back, and no lesson can weaken a check or skip approval.</figcaption>
+    </figure>
+  </section>
+</div>
+</body>
+</html>
