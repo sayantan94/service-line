@@ -14,6 +14,10 @@ touch, and whether the result counts.
 > This page is the proposed runtime design. None of it is implemented. The
 > prototype shows sample data only.
 
+[Open the runtime diagrams](https://sayantan94.github.io/service-line/service-line-runtime.html):
+the parts, one work item step by step, the run log, recovery, verification, and
+the learning loop.
+
 ## Agent steps and engine steps
 
 Every workflow step is one of three kinds, and the kind never changes at run time.
