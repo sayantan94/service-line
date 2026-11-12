@@ -6,27 +6,29 @@
 <title>Service Line</title>
 <meta name="description" content="Service Line canvas: follow work items through the line, with sample data.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap">
 <style>
 /* Layout: a full-window canvas with three floating panels (work items, inspector, toolbar).
    The line is drawn on the canvas as six frames. Agents appear as named cursors. */
 :root{
-  --canvas:#eceef1; --dot:#d5d9df; --panel:#ffffff; --raised:#f6f7f9; --line:#e2e5ea; --line-strong:#cfd4dc;
-  --ink:#14181d; --muted:#4a5462; --faint:#6b7583;
-  --select:#2f6feb; --select-soft:#e6eeff;
-  --you:#2f6feb; --codex:#0d9488; --claude:#7c5ce0;
-  --ok:#2c8a57; --ok-soft:#e5f4ec; --warn:#b9600f; --warn-soft:#fdf0e1; --bad:#c2362b; --bad-soft:#fdecea;
-  --shadow:0 1px 2px rgba(20,28,40,.06),0 8px 28px rgba(20,28,40,.10);
-  --sans:"Instrument Sans",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+  --canvas:#ffffff; --dot:transparent; --panel:#ffffff; --raised:#f6f5f4; --line:#e8e5e3; --line-strong:#d2cfcc;
+  --ink:#1e1f21; --muted:#5f6062; --faint:#6d6e6f;
+  --select:#3f6ac4; --select-soft:#ecf0fa;
+  --you:#3f6ac4; --codex:#0f8f80; --claude:#7a5fd6; --brand:#f06a6a;
+  --ok:#1f7a4d; --ok-soft:#e2f4ea; --warn:#8a5a00; --warn-soft:#fdf1cf; --bad:#b3261e; --bad-soft:#fde4e2;
+  --side:#2e2e30; --side-ink:#f5f4f3; --side-muted:#c9c6c4; --side-line:#454547; --side-hover:#3d3d40; --side-active:#4a4a4d;
+  --shadow:0 1px 2px rgba(30,31,33,.08),0 10px 30px rgba(30,31,33,.12);
+  --sans:"Inter",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
   --mono:"JetBrains Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
 }
 body[data-theme=dark]{
-  --canvas:#16181c; --dot:#2a2e35; --panel:#22252b; --raised:#2a2e35; --line:#343942; --line-strong:#454b56;
-  --ink:#f2f4f7; --muted:#bcc4cf; --faint:#96a0ad;
-  --select:#6b9bff; --select-soft:#22314f;
-  --you:#6b9bff; --codex:#34c3b3; --claude:#a48bf2;
-  --ok:#5fc48d; --ok-soft:#1d3327; --warn:#e79a4f; --warn-soft:#3a2a18; --bad:#ee7c72; --bad-soft:#3d2220;
-  --shadow:0 1px 2px rgba(0,0,0,.4),0 10px 30px rgba(0,0,0,.45);
+  --canvas:#1e1f21; --panel:#252628; --raised:#2e2f31; --line:#3a3b3d; --line-strong:#515254;
+  --ink:#f5f4f3; --muted:#b9b7b5; --faint:#a2a0a2;
+  --select:#8fb0f5; --select-soft:#2c3a57;
+  --you:#8fb0f5; --codex:#4fcabb; --claude:#ab97f4;
+  --ok:#74d3a0; --ok-soft:#1f3a2c; --warn:#f1c661; --warn-soft:#3d3214; --bad:#f28b82; --bad-soft:#44201d;
+  --side:#161718; --side-hover:#2a2b2d; --side-active:#343537; --side-line:#343537;
+  --shadow:0 1px 2px rgba(0,0,0,.5),0 10px 30px rgba(0,0,0,.5);
   color-scheme:dark;
 }
 *{box-sizing:border-box}
@@ -168,7 +170,7 @@ dialog textarea{min-height:64px;resize:vertical}
 .kind.you{background:var(--select-soft);color:var(--select)}
 .kind.end{background:var(--warn-soft);color:var(--warn)}
 .board.docs{display:block;width:auto!important;transform:none!important}
-.doc{width:min(820px,calc(100vw - 630px));min-width:320px;background:var(--panel);border:1px solid var(--line);border-radius:4px}
+.doc{width:min(820px,calc(100vw - 664px));min-width:320px;background:var(--panel);border:1px solid var(--line);border-radius:4px}
 .doc-name{display:flex;justify-content:space-between;gap:10px;padding:9px 14px;border-bottom:1px solid var(--line);font-family:var(--mono);font-size:13px;color:var(--muted)}
 .doc pre{margin:0;padding:16px 18px;font:13px/1.65 var(--mono);white-space:pre-wrap;overflow-wrap:anywhere;min-height:420px}
 .tree{display:flex;flex-direction:column}
@@ -196,6 +198,63 @@ pre.code{margin:0;padding:10px;background:var(--raised);border-radius:8px;font:1
   .crumb select{max-width:120px}
   .people{display:none}
 }
+
+/* ---- Asana-style theme: dark sidebar, tab bar, board columns, flat detail pane ---- */
+.canvas{background-image:none;cursor:default}
+.logo{background:var(--brand);color:#fff;border-radius:8px;width:28px;height:28px}
+.panel{box-shadow:none}
+.tools{box-shadow:var(--shadow);border-radius:12px}
+.btn{border-radius:8px}
+.btn.primary{background:var(--select);border-color:var(--select)}
+body[data-theme=dark] .btn.primary{color:#14181d}
+.modes{background:transparent;padding:0;gap:20px;border-radius:0}
+.modes button,.modes button[aria-pressed=true]{background:transparent;box-shadow:none;border-radius:0;padding:16px 2px 15px;border-bottom:2px solid transparent;font-weight:500}
+.modes button[aria-pressed=true]{border-bottom-color:var(--ink);color:var(--ink)}
+.tabs{gap:18px;padding:4px 16px 0;border-bottom:1px solid var(--line)}
+.tabs button,.tabs button[aria-selected=true]{background:transparent;border-radius:0;padding:10px 2px;border-bottom:2px solid transparent}
+.tabs button[aria-selected=true]{border-bottom-color:var(--ink);color:var(--ink)}
+.frame-name{font-size:15px;padding:0 4px}
+.frame-name b{font-weight:600}
+.frame-body,.frame.you .frame-body{background:var(--raised);border:0;border-radius:12px;padding:10px;min-height:340px}
+.frame-who{padding:2px 4px 4px}
+.card{border:1px solid var(--line);border-radius:10px;box-shadow:0 1px 2px rgba(30,31,33,.07);padding:14px;gap:8px}
+.card:hover{border-color:var(--line-strong);box-shadow:0 2px 6px rgba(30,31,33,.12)}
+.card[aria-pressed=true]{border-color:var(--select);box-shadow:0 0 0 1px var(--select)}
+.card .handle{display:none}
+.card-title{font-size:15px;font-weight:500}
+.card .dot{white-space:normal;text-align:left}
+.risk{border:0;border-radius:999px;padding:1px 10px;line-height:20px;font-weight:500;background:var(--ok-soft);color:var(--ok)}
+.risk.medium{background:var(--warn-soft);color:var(--warn)}
+.risk.high{background:var(--bad-soft);color:var(--bad)}
+.kind{border-radius:999px;padding:1px 9px;line-height:19px}
+.cursor{position:static;animation:none!important;margin-top:2px}
+.cursor svg{display:none}
+.cursor span{margin:0;border-radius:999px;padding:2px 10px 2px 8px}
+.cursor span::before{content:"";display:inline-block;width:6px;height:6px;border-radius:50%;background:#fff;margin-right:6px;vertical-align:1px}
+@media (prefers-reduced-motion:no-preference){.cursor.busy span::before{animation:pulse 1.4s ease-in-out infinite}}
+@keyframes pulse{50%{opacity:.25}}
+.pin{right:-8px;top:-10px;border-radius:999px}
+.loop{border:1px solid var(--line);border-radius:10px;background:var(--panel);padding:8px 12px}
+.note{border-radius:10px}
+.check{border-radius:10px}
+.seg{border-radius:8px}
+.seg button{border-radius:6px}
+dialog{border-radius:12px}
+h1{font-size:20px;line-height:1.3}
+@media (min-width:901px){
+  .left{top:0;left:0;bottom:0;width:240px;border:0;border-radius:0;background:var(--side);color:var(--side-ink);
+    --ink:var(--side-ink);--muted:var(--side-muted);--line:var(--side-line);--raised:var(--side-hover);--select-soft:var(--side-active);--select:#ffffff;--panel:var(--side);--faint:var(--side-muted)}
+  .left .search{background:var(--side-hover);border-color:var(--side-line);color:var(--side-ink)}
+  .left .search::placeholder{color:var(--side-muted)}
+  .left .row[aria-current=true],.left .row[aria-pressed=true]{font-weight:500}
+  .left .btn.primary{background:#fff;color:#1e1f21;border-color:#fff}
+  .top{top:0;left:240px;right:0;height:56px;border-radius:0;border-width:0 0 1px 0;padding:0 16px 0 20px;gap:16px}
+  .right{top:56px;right:0;bottom:0;width:364px;border-radius:0;border-width:0 0 0 1px;box-shadow:-10px 0 28px rgba(30,31,33,.10)}
+  .tools{left:calc(50% + 120px)}
+  body.pane .tools{left:calc(50% - 62px)}
+  .board-wrap{padding:80px 24px 120px 264px}
+  .crumb select{font-size:18px}
+}
 </style>
 </head>
 <body data-theme="light">
@@ -204,7 +263,7 @@ pre.code{margin:0;padding:10px;background:var(--raised);border-radius:8px;font:1
 
 <header class="panel top">
   <span class="logo">SL</span>
-  <div class="crumb"><span class="muted">Service Line /</span><select id="service" aria-label="Service"></select></div>
+  <div class="crumb"><select id="service" aria-label="Service"></select></div>
   <div class="seg modes" id="modes" role="group" aria-label="View"></div>
   <span class="sample" title="Nothing here runs an agent or a test">Sample data</span>
   <span class="spacer"></span>
@@ -252,7 +311,8 @@ function seed(){
 }
 let services,sid,selected,tab='details',query='',scenario='repair',zoom=1,theme='light',toastTimer,mode='line',selState='Research',wfTab='state',selFile='workflows/software-change.asl.json';
 const svc=()=>services[sid],cur=()=>svc()?.items.find(w=>w.id===selected);
-const LIVE=location.protocol.startsWith('http');let liveFiles=null,stopped=false,lastState='',openDesc=false;
+const LIVE=location.protocol.startsWith('http');let liveFiles=null,stopped=false,lastState='',openDesc=false,pane=false;
+const paneShown=()=>innerWidth<=900||mode!=='line'||pane;
 async function api(path,body){const r=await fetch(path,body?{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)}:undefined),j=await r.json();if(!r.ok||j.error)throw new Error(j.error||r.statusText);return j}
 async function refresh(force){try{const st=await api('/api/state'),text=JSON.stringify(st);if(!force&&text===lastState)return;lastState=text;services=st.services;stopped=st.stopped;if(!services[sid])sid=Object.keys(services)[0]||null;if(sid&&!svc().items.some(w=>w.id===selected))selected=svc().items[0]?.id||null;if(mode==='files')await loadFiles();render()}catch(e){toast('Cannot reach the engine: '+e.message)}}
 async function loadFiles(){if(!LIVE||!sid)return;try{liveFiles=await api(`/api/files?service=${encodeURIComponent(sid)}&item=${encodeURIComponent(selected||'')}`)}catch(e){liveFiles=[{path:'error',about:e.message,text:e.message}]}}
@@ -304,7 +364,7 @@ function act(name){
   if(name==='reset'){boot();toast('Sample data reset.');return}
   if(name==='zoom-in')zoom=Math.min(1.5,+(zoom+.1).toFixed(1));
   if(name==='zoom-out')zoom=Math.max(.5,+(zoom-.1).toFixed(1));
-  if(name==='fit')zoom=zoom===1?Math.max(.6,Math.min(1,+((innerWidth-628)/boardWidth()).toFixed(2))):1;
+  if(name==='fit')zoom=zoom===1?Math.max(.6,Math.min(1,+((innerWidth-288-(paneShown()?364:0))/boardWidth()).toFixed(2))):1;
   if(!w){render();return}
   if(name==='draft'&&w.status==='queued'){w.status='waiting';w.phase='approval';push(w,'step/end','Research finished');push(w,'step/end','Plan v1 written');push(w,'step/end',`Plan review by ${other(w.executor)}: no blocking finding`);tab='details'}
   if(name==='approve'&&w.status==='waiting'){w.approved=w.version;w.status='running';w.phase='implement';push(w,'step/end',`Plan v${w.version} approved by you. Plan, risk and checks are now locked`);push(w,'step/start','Implement, phase 1 of '+w.phases.length);push(w,'call/start',`${w.executor} working in its checkout`);toast('Plan approved. Use Next step to follow the run.')}
@@ -470,7 +530,7 @@ function renderItemInspector(){
   }else{
     body=`<div class="sec"><dl class="field"><dt>Run log</dt><dd class="mono">runs/run-001/events.jsonl</dd><dt>Revision</dt><dd class="mono">${w.revision}</dd><dt>Repairs</dt><dd>${w.repairs} of 2</dd></dl></div><div class="sec"><ol class="log">${w.log.map(([t,x],i)=>`<li><span>${i}</span><span>${t}</span><span>${esc(x)}</span></li>`).join('')}</ol></div>`;
   }
-  el.innerHTML=`<div class="sec"><div style="display:flex;justify-content:space-between;gap:8px;margin-bottom:6px"><span class="mono muted">${w.id}, ${esc(w.type)}</span><span class="dot ${w.status}">${STATUS[w.status]}</span></div><h1>${esc(w.title)}</h1><p class="muted ${w.desc.length>170&&!openDesc?'clamp':''}">${esc(w.desc)}</p>${w.desc.length>170?`<button class="ghost more" data-more>${openDesc?'Show less':'Show more'}</button>`:''}</div><div class="tabs" role="tablist">${[['details','Details'],['checks','Checks'],['activity','Activity']].map(([id,l])=>`<button role="tab" data-tab="${id}" aria-selected="${tab===id}">${l}</button>`).join('')}</div><div class="scroll">${body}</div>`;
+  el.innerHTML=`<div class="sec"><div style="display:flex;justify-content:space-between;gap:8px;margin-bottom:6px"><span class="mono muted">${w.id}, ${esc(w.type)}</span><span style="display:flex;align-items:center;gap:8px"><span class="dot ${w.status}">${STATUS[w.status]}</span><button class="ghost" data-close-pane aria-label="Close details" style="padding:2px 8px">✕</button></span></div><h1>${esc(w.title)}</h1><p class="muted ${w.desc.length>170&&!openDesc?'clamp':''}">${esc(w.desc)}</p>${w.desc.length>170?`<button class="ghost more" data-more>${openDesc?'Show less':'Show more'}</button>`:''}</div><div class="tabs" role="tablist">${[['details','Details'],['checks','Checks'],['activity','Activity']].map(([id,l])=>`<button role="tab" data-tab="${id}" aria-selected="${tab===id}">${l}</button>`).join('')}</div><div class="scroll">${body}</div>`;
 }
 function renderItemTools(){
   const w=cur();let main='';
@@ -501,10 +561,10 @@ function renderTop(){
   $('.sample').textContent=LIVE?(stopped?'Stopped':'Live'):'Sample data';$('.sample').title=LIVE?'Connected to the engine on this computer':'Nothing here runs an agent or a test';$('#classic').hidden=LIVE;
   document.body.dataset.theme=theme;$('#theme').textContent=theme==='dark'?'Light':'Dark';document.title='Service Line, '+svc().name;
 }
-const boardWidth=()=>Math.max(860,innerWidth-(innerWidth>900?628:32));
+const boardWidth=()=>Math.max(980,innerWidth-(innerWidth>900?288:32));
 const fitZoom=()=>1;
-function sizeBoard(b){const w=boardWidth();b.style.width=w+'px';b.parentElement.style.width=(w*zoom+(innerWidth>900?612:32))+'px';b.parentElement.style.height=(b.offsetHeight*zoom+204)+'px'}
-function reveal(){const c=$('.card[aria-pressed=true]'),cv=$('#canvas');if(!c||innerWidth<=900||mode==='files')return;const r=c.getBoundingClientRect(),lo=264,hi=innerWidth-348;if(r.left<lo)cv.scrollLeft-=lo-r.left+20;else if(r.right>hi)cv.scrollLeft+=r.right-hi+40}
+function sizeBoard(b){const w=boardWidth();b.style.width=w+'px';b.parentElement.style.paddingRight=(innerWidth>900?(paneShown()?388:24):16)+'px';b.parentElement.style.width=(w*zoom+(innerWidth>900?264+(paneShown()?388:24):32))+'px';b.parentElement.style.height=(b.offsetHeight*zoom+204)+'px'}
+function reveal(){const c=$('.card[aria-pressed=true]'),cv=$('#canvas');if(!c||innerWidth<=900||mode==='files')return;const r=c.getBoundingClientRect(),lo=264,hi=innerWidth-(paneShown()?388:24);if(r.left<lo)cv.scrollLeft-=lo-r.left+20;else if(r.right>hi)cv.scrollLeft+=r.right-hi+40}
 function renderEmpty(){
   $('#service').innerHTML='<option>No services</option>';$('#people').innerHTML='';$('#modes').innerHTML='';
   const b=$('#board');b.className='board docs';b.style.transform='';b.style.width='';b.parentElement.style.height='';b.parentElement.style.width='';
@@ -513,18 +573,19 @@ function renderEmpty(){
   $('#inspector').innerHTML='<div class="sec"><h1>Start here</h1><p class="muted">Add a repository as a service. Its work items will appear on the line.</p></div>';
   $('#tools').innerHTML='<button class="btn primary" data-act="add-service">Add a service</button>';
 }
-function render(){if(!sid){renderEmpty();return}renderTop();renderBoard();renderLayers();renderInspector();renderTools();reveal()}
+function render(){if(!sid){$('#inspector').hidden=false;renderEmpty();return}$('#inspector').hidden=!paneShown();document.body.classList.toggle('pane',paneShown());renderTop();renderBoard();renderLayers();renderInspector();renderTools();reveal()}
 function boot(){mode='line';zoom=fitZoom();$('#canvas').scrollLeft=0;if(LIVE){services={};sid=null;selected=null;tab='details';refresh(true);if(!window.__poll)window.__poll=setInterval(()=>refresh(),2000);return}services=seed();sid='appliedin';selected='WI-042';tab='details';query='';scenario='repair';$('#search').value='';render()}
 
 document.addEventListener('click',e=>{
-  const t=e.target.closest('[data-more],[data-item],[data-service],[data-tab],[data-risk],[data-act],[data-close],[data-mode],[data-state],[data-wftab],[data-file]');if(!t)return;
+  const t=e.target.closest('[data-close-pane],[data-more],[data-item],[data-service],[data-tab],[data-risk],[data-act],[data-close],[data-mode],[data-state],[data-wftab],[data-file]');if(!t)return;
   if(t.dataset.more!==undefined){openDesc=!openDesc;renderInspector();return}
   if(t.dataset.mode){mode=t.dataset.mode;$('#canvas').scrollLeft=0;$('#canvas').scrollTop=0;if(mode==='files'&&LIVE){loadFiles().then(render);return}render();return}
   if(t.dataset.state){selState=t.dataset.state;wfTab='state';render();return}
   if(t.dataset.wftab){wfTab=t.dataset.wftab;renderInspector();return}
   if(t.dataset.file){selFile=t.dataset.file;render();return}
   if(t.dataset.close!==undefined){$('#dialog').close();return}
-  if(t.dataset.item){selected=t.dataset.item;liveFiles=null;render();return}
+  if(t.dataset.closePane!==undefined){pane=false;render();return}
+  if(t.dataset.item){selected=t.dataset.item;liveFiles=null;pane=true;render();return}
   if(t.dataset.service){sid=t.dataset.service;selected=svc().items[0]?.id||null;tab='details';render();return}
   if(t.dataset.tab){tab=t.dataset.tab;renderInspector();return}
   if(t.dataset.risk){const w=cur();if(LIVE){if(w&&!w.approved&&w.status==='waiting')send('risk',{risk:t.dataset.risk});return}if(w&&!w.approved){w.risk=t.dataset.risk;push(w,'step/end','You set risk to '+w.risk);render()}return}
