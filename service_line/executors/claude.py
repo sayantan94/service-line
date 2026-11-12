@@ -9,8 +9,13 @@ import json
 from pathlib import Path
 from typing import Any
 
+from ..workspace.local import confine
 from .base import AgentResult, run_streaming
 from .guards import RepeatDetector
+
+SANDBOX = {"read": "read-only", "verify": "read-only", "write": "workspace-write"}
+# Claude Code keeps its own state here; it must stay writable for the tool to run.
+STATE = tuple(Path.home() / p for p in (".claude", ".claude.json", "Library/Caches", ".cache", ".local/state"))
 
 TOOLS = {
     "read": "Read,Grep,Glob",
@@ -69,7 +74,10 @@ class Claude:
                     return "stuck"
             return None
 
-        done = run_streaming(command(access), cwd, prompt, timeout, on_line)
+        # The whole agent runs inside the sandbox, so even its shell commands
+        # cannot write outside the folders this step is allowed.
+        argv = confine(command(access), SANDBOX[access], cwd, STATE)
+        done = run_streaming(argv, cwd, prompt, timeout, on_line)
         if done.stopped:
             return AgentResult("", done.stopped, f"stopped: {done.stopped}")
         return parse(lines, done.exit_code)
