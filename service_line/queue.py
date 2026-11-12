@@ -19,6 +19,7 @@ class Queue:
         self._slots = threading.Semaphore(max_running)
         self._lock = threading.Lock()
         self._active: dict[str, threading.Thread] = {}
+        self._last: dict[str, threading.Thread] = {}
         self.errors: dict[str, str] = {}
 
     @staticmethod
@@ -39,7 +40,7 @@ class Queue:
                 return False
             self.errors.pop(key, None)
             thread = threading.Thread(target=self._work, args=(item, key), daemon=True, name=f"line-{key}")
-            self._active[key] = thread
+            self._active[key] = self._last[key] = thread
             thread.start()
             return True
 
@@ -51,10 +52,15 @@ class Queue:
             except Exception as error:                   # an engine fault, not an agent failure
                 status, detail = "failed", f"{type(error).__name__}: {error}"
                 self.errors[key] = detail + "\n" + traceback.format_exc()
-            self._on_done(item.id, item.title, status, detail)
+        # The item is free for its next step before anyone is told about it:
+        # a slow notification must not hold up a decision.
+        with self._lock:
+            if self._active.get(key) is threading.current_thread():
+                del self._active[key]
+        self._on_done(item.id, item.title, status, detail)
 
     def wait(self, item: WorkItem, timeout: float | None = None) -> None:
         with self._lock:
-            thread = self._active.get(self.key(item))
+            thread = self._last.get(self.key(item))
         if thread:
             thread.join(timeout)

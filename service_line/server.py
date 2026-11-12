@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import time
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from typing import Any
@@ -159,11 +160,14 @@ class App:
         elif action in ("start", "continue"):
             self.queue.submit(item)
         elif action in ("approve", "changes", "reject"):
-            if self.queue.busy(item) or line.status(item)["status"] != "waiting":
+            if line.status(item)["status"] != "waiting":
                 raise ValueError("this work item is not waiting for a decision")
             guide = guides.load(Path(item.instance.repo) / item.instance.guide)
             item.decide({"approve": "approved", "changes": "revise", "reject": "rejected"}[action], feedback, guide.version)
-            self.queue.submit(item)
+            for _ in range(100):                 # the planning thread may still be closing its log
+                if self.queue.submit(item):
+                    break
+                time.sleep(0.05)
         else:
             raise ValueError(f"unknown action: {action}")
         return {"ok": True}

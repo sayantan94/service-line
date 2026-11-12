@@ -61,6 +61,24 @@ class ServerTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             self.app.act(self.sid, self.wid, "risk", risk="low")
 
+    def test_a_slow_notification_does_not_block_the_next_decision(self):
+        import time
+        release = threading.Event()
+        self.queue._on_done = lambda *a: release.wait(5)        # the notifier hangs
+        self.app.act(self.sid, self.wid, "start")
+        for _ in range(200):
+            if self.view()["status"] == "waiting":
+                break
+            time.sleep(0.05)
+        self.assertFalse(self.view()["busy"])
+        self.app.act(self.sid, self.wid, "approve")            # must not be refused
+        release.set()
+        for _ in range(400):
+            if self.view()["status"] == "ready":
+                break
+            time.sleep(0.05)
+        self.assertEqual(self.view()["status"], "ready")
+
     def test_a_decision_is_refused_when_nothing_is_waiting(self):
         with self.assertRaises(ValueError):
             self.app.act(self.sid, self.wid, "approve")

@@ -75,7 +75,7 @@ button{cursor:pointer}
 /* chips */
 .dot{display:inline-flex;align-items:center;gap:5px;font-size:10.5px;white-space:nowrap}
 .dot::before{content:"";width:6px;height:6px;border-radius:50%;background:var(--faint)}
-.dot.running::before{background:var(--select)}.dot.waiting::before,.dot.changes::before,.dot.blocked::before,.dot.inconclusive::before{background:var(--warn)}
+.dot.running::before,.dot.planning::before{background:var(--select)}.dot.waiting::before,.dot.changes::before,.dot.blocked::before,.dot.inconclusive::before{background:var(--warn)}
 .dot.ready::before,.dot.passed::before{background:var(--ok)}.dot.failed::before{background:var(--bad)}
 .risk{font-size:10px;padding:0 6px;border-radius:3px;border:1px solid var(--line-strong);color:var(--muted);line-height:16px}
 .risk.medium{color:var(--warn);border-color:transparent;background:var(--warn-soft)}
@@ -204,8 +204,8 @@ pre.code{margin:0;padding:10px;background:var(--raised);border-radius:8px;font:1
   <span class="sample" title="Nothing here runs an agent or a test">Sample data</span>
   <span class="spacer"></span>
   <div class="people" id="people" aria-label="Who is working on the selected item"></div>
-  <a class="ghost" href="docs/" target="_blank" rel="noopener">Docs</a>
-  <a class="ghost" href="service-line-ui.html">Classic view</a>
+  <a class="ghost" href="https://sayantan94.github.io/service-line/docs/" target="_blank" rel="noopener">Docs</a>
+  <a class="ghost" id="classic" href="service-line-ui.html">Classic view</a>
   <button class="ghost" id="theme" aria-label="Switch theme">Dark</button>
 </header>
 
@@ -223,7 +223,7 @@ pre.code{margin:0;padding:10px;background:var(--raised);border-radius:8px;font:1
 <script>
 const $=s=>document.querySelector(s),esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const STAGES=[['Intake','You'],['Plan','Implementer plans, verifier reviews'],['Approval','You'],['Implement','Implementer'],['Verify','Engine checks, then verifier'],['Ready','You']];
-const STATUS={queued:'Queued',waiting:'Needs your approval',changes:'Plan being revised',running:'Running',blocked:'Needs attention',ready:'Ready for review',passed:'Passed',failed:'Failed',inconclusive:'Inconclusive',not_run:'Not run'};
+const STATUS={planning:'Planning',cancelled:'Cancelled',queued:'Queued',waiting:'Needs your approval',changes:'Plan being revised',running:'Running',blocked:'Needs attention',ready:'Ready for review',passed:'Passed',failed:'Failed',inconclusive:'Inconclusive',not_run:'Not run'};
 const RISK={low:'Low risk',medium:'Medium risk',high:'High risk'};
 const RISK_NOTE={low:'A small, contained change that is easy to reverse. You review the evidence summary.',medium:'Touches a shared path other code depends on. You review the diff and the evidence.',high:'Touches state or data that is hard to reverse. A named reviewer records acceptance.'};
 const other=e=>e==='Codex'?'Claude':'Codex',tone=e=>e==='Codex'?'codex':'claude';
@@ -246,8 +246,16 @@ function seed(){
   return S;
 }
 let services,sid,selected,tab='details',query='',scenario='repair',zoom=1,theme='light',toastTimer,mode='line',selState='Research',wfTab='state',selFile='workflows/software-change.asl.json';
-const svc=()=>services[sid],cur=()=>svc().items.find(w=>w.id===selected);
-function stageOf(w){if(w.status==='queued')return 0;if(w.status==='changes')return 1;if(w.status==='waiting')return 2;if(w.status==='ready')return 5;return ['implement','repair'].includes(w.phase)?3:4}
+const svc=()=>services[sid],cur=()=>svc()?.items.find(w=>w.id===selected);
+const LIVE=location.protocol.startsWith('http');let liveFiles=null,stopped=false,lastState='';
+async function api(path,body){const r=await fetch(path,body?{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)}:undefined),j=await r.json();if(!r.ok||j.error)throw new Error(j.error||r.statusText);return j}
+async function refresh(force){try{const st=await api('/api/state'),text=JSON.stringify(st);if(!force&&text===lastState)return;lastState=text;services=st.services;stopped=st.stopped;if(!services[sid])sid=Object.keys(services)[0]||null;if(sid&&!svc().items.some(w=>w.id===selected))selected=svc().items[0]?.id||null;if(mode==='files')await loadFiles();render()}catch(e){toast('Cannot reach the engine: '+e.message)}}
+async function loadFiles(){if(!LIVE||!sid)return;try{liveFiles=await api(`/api/files?service=${encodeURIComponent(sid)}&item=${encodeURIComponent(selected||'')}`)}catch(e){liveFiles=[{path:'error',about:e.message,text:e.message}]}}
+async function send(action,extra){try{await api('/api/act',{service:sid,item:selected,action,...extra});await refresh(true)}catch(e){toast(e.message)}}
+const ROLE={Research:'i',Plan:'i',Implement:'i',Repair:'i',ReviewPlan:'v',Review:'v'};
+function agentOn(w){if(LIVE){if(!w.busy||!ROLE[w.current])return '';return cursor(ROLE[w.current]==='i'?w.executor:other(w.executor),true)}
+  const v=other(w.executor);return w.status==='running'?(['implement','repair'].includes(w.phase)?cursor(w.executor,true):w.phase==='review'?cursor(v,true):''):w.status==='changes'?cursor(w.executor,true):''}
+function stageOf(w){if(w.status==='queued')return 0;if(['changes','planning'].includes(w.status))return 1;if(['waiting','cancelled'].includes(w.status))return 2;if(w.status==='ready')return 5;return ['implement','repair'].includes(w.phase)?3:4}
 function push(w,type,text){w.log.push([type,text])}
 function result(w,s,id,verdict){
   if(id==='review')return {status:verdict,out:JSON.stringify({verdict,by:other(w.executor),revision:w.revision,plan:'v'+w.version,criteria:w.criteria.map((c,i)=>({id:'AC'+(i+1),status:verdict})),hiddenScenarios:{run:2,passed:verdict==='passed'?2:0,visibleToImplementer:false},note:'Sample review. No agent was run.'},null,2)};
@@ -255,6 +263,7 @@ function result(w,s,id,verdict){
   return {status:verdict,out:verdict==='passed'?`$ ${cmd}\n\nSample output: all selected tests passed.\nexit 0 on ${w.revision}`:verdict==='failed'?`$ ${cmd}\n\nFAILED: unconfirmed submission must not be retried\nexpected is_retryable(...) to be false, got true\nexit 1 on ${w.revision}`:`$ ${cmd}\n\nERROR: the test environment could not load a dependency.\nNo assertion ran.\nexit 2 on ${w.revision}`};
 }
 function gate(w){
+  if(LIVE){const g=w.gate;if(!w.approved)return ['not_run','Waiting for your approval','No check runs before the plan is approved.'];if(!g)return ['not_run','Verification not finished','Every check and the review must pass on the current revision.'];return [g.verdict,g.verdict==='passed'?'Evidence complete':g.verdict==='failed'?'Verification failed':'Evidence is missing',g.reasons.join('. ')||'Every check and the review passed on '+w.revision+'.']}
   if(!w.approved)return ['not_run','Waiting for your approval','No check runs before the plan is approved.'];
   const r=[...w.checks,'review'].map(c=>w.results[c]?.status);
   if(r.includes('failed'))return ['failed','A check failed','The implementer repairs inside the approved plan, then every check runs again.'];
@@ -284,6 +293,9 @@ function advance(){
 function act(name){
   const w=cur();
   if(name==='new')return openNew();
+  if(name==='add-service')return openService();
+  if(LIVE&&['start','continue','approve','reject','stop','unstop'].includes(name))return send(name);
+  if(LIVE&&name==='changes')return dialog(`<h2>Request plan changes</h2><p class="muted">${esc(w.id)}, plan v${w.version}</p><label for="fb">What should change?</label><textarea id="fb" name="fb" required></textarea><div class="actions"><button class="btn" type="button" data-close>Cancel</button><button class="btn primary">Send back to Plan</button></div>`,d=>send('changes',{feedback:d.get('fb').trim()}));
   if(name==='reset'){boot();toast('Sample data reset.');return}
   if(name==='zoom-in')zoom=Math.min(1.5,+(zoom+.1).toFixed(1));
   if(name==='zoom-out')zoom=Math.max(.5,+(zoom-.1).toFixed(1));
@@ -299,10 +311,12 @@ function act(name){
 }
 function openNew(){
   dialog(`<h2>New work item</h2><p class="muted">Say what you want. The plan comes back to you for approval.</p><label for="n-title">Title</label><input id="n-title" name="title" required maxlength="100"><div class="pair"><div><label for="n-type">Type</label><select id="n-type" name="type"><option>Feature</option><option>Bug</option><option>Refactor</option><option>Maintenance</option></select></div><div><label for="n-exec">Implementer</label><select id="n-exec" name="executor"><option>Codex</option><option>Claude</option></select></div></div><label for="n-goal">Outcome</label><textarea id="n-goal" name="goal" required></textarea><label for="n-crit">How you will know it worked, one per line</label><textarea id="n-crit" name="criteria" required></textarea><div class="actions"><button class="btn" type="button" data-close>Cancel</button><button class="btn primary">Create work item</button></div>`,d=>{
+    if(LIVE){api('/api/items',{service:sid,title:d.get('title'),type:d.get('type'),implementer:d.get('executor'),outcome:d.get('goal'),criteria:d.get('criteria').split('\n').map(x=>x.trim()).filter(Boolean)}).then(r=>{selected=r.id;tab='details';return refresh(true)}).catch(e=>toast(e.message));return}
     const s=svc(),prefix=s.items[0]?.id.slice(0,2)||s.name.slice(0,2).toUpperCase(),n=Math.max(0,...s.items.map(w=>+w.id.slice(3)))+1,id=prefix+'-'+String(n).padStart(3,'0');
     s.items.unshift({id,title:d.get('title').trim(),type:d.get('type'),executor:d.get('executor'),risk:'low',status:'queued',phase:'queued',version:1,revision:'r1',repairs:0,attempt:0,results:{},desc:d.get('goal').trim(),phases:[['Research','Map the code, rules and lessons that apply.'],['Build','Make the change the plan describes.']],criteria:d.get('criteria').split('\n').map(x=>x.trim()).filter(Boolean),checks:['suite'],log:[['step/end','Request recorded']]});
     selected=id;tab='details';render();toast('Work item created. Draft a plan to continue.')});
 }
+function openService(){dialog(`<h2>Add a service</h2><p class="muted">A service is a git repository on this computer. Work items are built in separate checkouts of it.</p><label for="s-name">Name</label><input id="s-name" name="name" required maxlength="60"><label for="s-repo">Repository folder</label><input id="s-repo" name="repo" required placeholder="/path/to/repository"><label for="s-exec">Default implementer</label><select id="s-exec" name="implementer"><option>Codex</option><option>Claude</option></select><div class="actions"><button class="btn" type="button" data-close>Cancel</button><button class="btn primary">Add service</button></div>`,d=>{if(!LIVE){toast('Adding a service needs the engine. Start it with: python3 -m service_line serve');return}api('/api/services',{name:d.get('name'),repo:d.get('repo'),implementer:d.get('implementer')}).then(r=>{sid=r.id;selected=null;return refresh(true)}).catch(e=>toast(e.message))})}
 function openChanges(w){dialog(`<h2>Request plan changes</h2><p class="muted">${esc(w.id)}, plan v${w.version}</p><label for="fb">What should change?</label><textarea id="fb" name="fb" required></textarea><div class="actions"><button class="btn" type="button" data-close>Cancel</button><button class="btn primary">Send back to Plan</button></div>`,d=>{w.feedback=d.get('fb').trim();w.status='changes';w.phase='plan';push(w,'step/end','You asked for changes: '+w.feedback);render()})}
 function dialog(html,done){const f=$('#dialog-form');f.innerHTML=html;f.onsubmit=e=>{e.preventDefault();done(new FormData(f));$('#dialog').close()};$('#dialog').showModal()}
 function toast(t){const el=$('#toast');el.textContent=t;el.hidden=false;clearTimeout(toastTimer);toastTimer=setTimeout(()=>el.hidden=true,3600)}
@@ -377,6 +391,7 @@ function renderStateInspector(){
 
 /* ---- files: what Service Line keeps on disk for this service ---- */
 function fileSet(){
+  if(LIVE)return liveFiles?.length?liveFiles:[{path:'loading',about:'',text:'Loading…'}];
   const s=svc(),w=cur(),base=`instances/${sid}/`,F=[];const add=(path,about,text)=>F.push({path,about,text});
   add('workflows/software-change.asl.json','The workflow definition. A run pins one version of it.',JSON.stringify(WORKFLOW,null,2));
   add('skills/plan/write-plan/SKILL.md','One of the instruction files the engine hands an agent for a step.','---\nname: write-plan\ndescription: Turn research notes into a plan with scope, phases, checks and a risk level.\n---\n\nState what is in scope and what is not.\nSplit the work into small phases. Each phase must be checkable on its own.\nFor every acceptance criterion, name the check that would fail if the code were broken.\nPropose a risk level and give the reasons.\nDo not edit code. Write the plan only.');
@@ -421,13 +436,13 @@ function renderInspector(){mode==='workflow'?renderStateInspector():mode==='file
 function renderTools(){mode==='line'?renderItemTools():renderOtherTools()}
 function card(w){
   const sel=w.id===selected,st=stageOf(w),v=other(w.executor);
-  const who=w.status==='running'?(['implement','repair'].includes(w.phase)?cursor(w.executor,true):w.phase==='review'?cursor(v,true):''):w.status==='changes'?cursor(w.executor,true):'';
+  const who=agentOn(w);
   const pin=w.status==='waiting'?`<span class="pin ${tone(v)}" title="Plan review by ${v}">1</span>`:'';
-  return `<button class="card" data-item="${w.id}" aria-pressed="${sel}">${sel?'<i class="handle a"></i><i class="handle b"></i><i class="handle c"></i><i class="handle d"></i>':''}${pin}<span class="card-top"><span class="mono">${w.id}</span><span class="risk ${w.risk}">${RISK[w.risk]}</span></span><span class="card-title">${esc(w.title)}</span><span class="card-meta"><span class="dot ${w.phase==='failed'?'failed':w.status}">${w.phase==='failed'?'Check failed':w.phase==='repair'?'Repairing':w.phase==='review'?'Verifier reviewing':STATUS[w.status]}</span></span>${who}</button>`;
+  return `<button class="card" data-item="${w.id}" aria-pressed="${sel}">${sel?'<i class="handle a"></i><i class="handle b"></i><i class="handle c"></i><i class="handle d"></i>':''}${pin}<span class="card-top"><span class="mono">${w.id}</span><span class="risk ${w.risk}">${RISK[w.risk]}</span></span><span class="card-title">${esc(w.title)}</span><span class="card-meta"><span class="dot ${w.phase==='failed'?'failed':w.status}">${LIVE&&['planning','running'].includes(w.status)?(w.busy?w.current:w.current+', paused'):w.phase==='failed'?'Check failed':w.phase==='repair'?'Repairing':w.phase==='review'?'Verifier reviewing':STATUS[w.status]}</span></span>${who}</button>`;
 }
 function renderWorkList(){
   const s=svc(),q=query.toLowerCase(),icon='<svg viewBox="0 0 12 12" aria-hidden="true"><path d="M3 1v10M9 1v10M1 3h10M1 9h10"/></svg>';
-  let h=`<div class="sec"><div class="sec-title">Services</div>${Object.entries(services).map(([id,x])=>`<button class="row" data-service="${id}" aria-current="${id===sid}"><span class="grow">${esc(x.name)}</span><span class="muted">${x.items.length}</span></button>`).join('')}</div><div class="sec"><div class="sec-title">Work items<button class="ghost" data-act="new" style="padding:2px 7px">New</button></div>`;
+  let h=`<div class="sec"><div class="sec-title">Services<button class="ghost" data-act="add-service" style="padding:2px 7px">Add</button></div>${Object.entries(services).map(([id,x])=>`<button class="row" data-service="${id}" aria-current="${id===sid}"><span class="grow">${esc(x.name)}</span><span class="muted">${x.items.length}</span></button>`).join('')}</div><div class="sec"><div class="sec-title">Work items<button class="ghost" data-act="new" style="padding:2px 7px">New</button></div>`;
   let any=false;
   STAGES.forEach(([name],i)=>{const lane=s.items.filter(w=>stageOf(w)===i&&(w.title+' '+w.id).toLowerCase().includes(q));if(!lane.length)return;any=true;h+=`<div class="group">${name}</div>`+lane.map(w=>`<button class="row" data-item="${w.id}" aria-pressed="${w.id===selected}">${icon}<span class="grow">${esc(w.title)}</span><span class="dot ${w.phase==='failed'?'failed':w.status}" aria-label="${STATUS[w.status]}"></span></button>`).join('')});
   if(!any)h+=`<p class="muted" style="padding:6px 8px">${s.items.length?'No work item matches.':'No work items yet. Create one to see it on the line.'}</p>`;
@@ -439,11 +454,11 @@ function renderItemInspector(){
   const v=other(w.executor),locked=!!w.approved,g=gate(w);
   let body='';
   if(tab==='details'){
-    body=`<div class="sec"><dl class="field"><dt>Implementer</dt><dd>${locked?esc(w.executor):`<select id="exec" aria-label="Implementer"><option ${w.executor==='Codex'?'selected':''}>Codex</option><option ${w.executor==='Claude'?'selected':''}>Claude</option></select>`}</dd><dt>Verifier</dt><dd>${v} <span class="muted">always the other one</span></dd><dt>Workflow</dt><dd class="mono">software-change v1</dd><dt>Plan</dt><dd>v${w.version}${locked?', approved':', not approved'}</dd></dl></div>
+    body=`<div class="sec"><dl class="field"><dt>Implementer</dt><dd>${locked||LIVE?esc(w.executor):`<select id="exec" aria-label="Implementer"><option ${w.executor==='Codex'?'selected':''}>Codex</option><option ${w.executor==='Claude'?'selected':''}>Claude</option></select>`}</dd><dt>Verifier</dt><dd>${v} <span class="muted">always the other one</span></dd><dt>Workflow</dt><dd class="mono">software-change v1</dd><dt>Plan</dt><dd>v${w.version}${locked?', approved':', not approved'}</dd></dl></div>
     <div class="sec"><div class="sec-title">Risk${locked?'<span class="muted" style="font-weight:400">locked at approval</span>':''}</div><div class="seg" role="group" aria-label="Risk level">${Object.keys(RISK).map(r=>`<button data-risk="${r}" aria-pressed="${w.risk===r}" ${locked?'disabled':''}>${r[0].toUpperCase()+r.slice(1)}</button>`).join('')}</div><p class="muted" style="margin-top:8px">${RISK_NOTE[w.risk]}</p></div>
     ${w.status==='queued'?`<div class="sec"><div class="note"><b style="font-weight:500">No plan yet</b><span class="muted">The implementer researches the code and writes a plan. The verifier reviews it before it reaches you.</span></div></div>`:`<div class="sec"><div class="sec-title">Plan phases</div><ol class="phases">${w.phases.map(([t,b])=>`<li><span><b>${esc(t)}</b><span class="muted">${esc(b)}</span></span></li>`).join('')}</ol></div>`}
     <div class="sec"><div class="sec-title">What must be true</div><dl class="crit">${w.criteria.map((c,i)=>`<dt class="mono">AC${i+1}</dt><dd>${esc(c)}</dd>`).join('')}</dl></div>
-    ${w.status==='changes'?`<div class="sec"><div class="note warn"><b style="font-weight:500">You asked for changes</b><span>${esc(w.feedback)}</span></div></div>`:w.status!=='queued'?`<div class="sec"><div class="note review ${tone(v)}"><b style="font-weight:500">Plan review by ${v}</b><span class="muted">No blocking finding. Every criterion has a check that would fail on broken code. Risk level ${w.risk} looks right.</span></div></div>`:''}`;
+    ${w.status==='changes'?`<div class="sec"><div class="note warn"><b style="font-weight:500">You asked for changes</b><span>${esc(w.feedback)}</span></div></div>`:w.status!=='queued'?`<div class="sec"><div class="note review ${tone(v)}"><b style="font-weight:500">Plan review by ${v}</b><span class="muted" style="white-space:pre-wrap">${LIVE?esc((w.review||'The review has not run yet.').slice(0,1200)):`No blocking finding. Every criterion has a check that would fail on broken code. Risk level ${w.risk} looks right.`}</span></div></div>`:''}${LIVE&&(w.detail||w.error)&&['blocked','cancelled'].includes(w.status)?`<div class="sec"><div class="note warn"><b style="font-weight:500">Why it stopped</b><span style="white-space:pre-wrap">${esc(w.error||w.detail)}</span></div></div>`:''}`;
   }else if(tab==='checks'){
     const row=(id,title,sub)=>{const r=w.results[id];return `<details class="check" ${r&&r.status!=='passed'?'open':''}><summary><span><span style="font-weight:500">${esc(title)}</span><br><span class="muted">${esc(sub)}</span></span><span class="dot ${r?.status||'not_run'}">${STATUS[r?.status||'not_run']}</span></summary><pre>${esc(r?.out||'No evidence yet. A result records the command, its output and the revision it ran on.')}</pre></details>`};
     body=`<div class="sec"><div class="gate ${g[0]}"><b style="font-weight:600">${g[1]}</b><span class="muted">${g[2]}</span></div></div><div class="sec"><div class="sec-title">Run by the engine</div>${w.checks.map(c=>row(c,svc().checks[c][0],svc().checks[c][1])).join('')}</div><div class="sec"><div class="sec-title">Run by the verifier</div>${row('review','Review and hidden scenarios',v+' exercises the service and cannot edit the code')}</div>`;
@@ -454,6 +469,15 @@ function renderItemInspector(){
 }
 function renderItemTools(){
   const w=cur();let main='';
+  if(LIVE){
+    if(!w)main='<span class="muted" style="padding:0 8px">Create a work item to start</span>';
+    else if(w.status==='queued')main='<button class="btn primary" data-act="start">Start</button>';
+    else if(w.status==='waiting')main='<button class="btn" data-act="reject">Reject</button><button class="btn" data-act="changes">Request changes</button><button class="btn primary" data-act="approve">Approve plan</button>';
+    else if(['planning','running'].includes(w.status))main=w.busy?`<span class="dot running" style="padding:0 8px">Working: ${esc(w.current)}</span>`:'<button class="btn primary" data-act="continue">Continue</button>';
+    else if(w.status==='blocked')main='<span class="dot blocked" style="padding:0 8px">Needs your attention. See Details</span>';
+    else main=`<span class="dot ${w.status}" style="padding:0 8px">${STATUS[w.status]}</span>`;
+    $('#tools').innerHTML=`<button class="btn" data-act="new">New work item</button><span class="sep"></span>${main}<span class="sep"></span><button class="ghost" data-act="${stopped?'unstop':'stop'}">${stopped?'Release stop':'Stop all'}</button><span class="sep"></span><button class="ghost" data-act="zoom-out" aria-label="Zoom out">−</button><button class="ghost zoom" data-act="fit" aria-label="Fit to window">${Math.round(zoom*100)}%</button><button class="ghost" data-act="zoom-in" aria-label="Zoom in">+</button>`;
+    return}
   if(!w)main='<span class="muted" style="padding:0 8px">Select a work item</span>';
   else if(w.status==='queued')main='<button class="btn primary" data-act="draft">Draft plan</button>';
   else if(w.status==='waiting')main='<button class="btn" data-act="changes">Request changes</button><button class="btn primary" data-act="approve">Approve plan</button>';
@@ -469,28 +493,37 @@ function renderTop(){
   const w=cur(),imp=w&&w.status==='running'&&['implement','repair','failed'].includes(w.phase)||w?.status==='changes',ver=w&&w.status==='running'&&w.phase==='review';
   $('#people').innerHTML=`<span class="avatar" style="background:var(--you)" title="You">Y</span>`+(w?`<span class="avatar ${imp?'':'idle'}" style="background:var(--${tone(w.executor)})" title="${w.executor}, implementer">${w.executor[0]}</span><span class="avatar ${ver?'':'idle'}" style="background:var(--${tone(other(w.executor))})" title="${other(w.executor)}, verifier">${other(w.executor)[0]}</span>`:'');
   $('#modes').innerHTML=[['line','Line'],['workflow','Workflow'],['files','Files']].map(([id,l])=>`<button data-mode="${id}" aria-pressed="${mode===id}">${l}</button>`).join('');$('#search').parentElement.hidden=mode!=='line';
+  $('.sample').textContent=LIVE?(stopped?'Stopped':'Live'):'Sample data';$('.sample').title=LIVE?'Connected to the engine on this computer':'Nothing here runs an agent or a test';$('#classic').hidden=LIVE;
   document.body.dataset.theme=theme;$('#theme').textContent=theme==='dark'?'Light':'Dark';document.title='Service Line, '+svc().name;
 }
 const fitZoom=()=>Math.max(.8,Math.min(1.15,+((innerWidth-(innerWidth>900?590:32))/1166).toFixed(2)));
 function reveal(){const c=$('.card[aria-pressed=true]'),cv=$('#canvas');if(!c||innerWidth<=900||mode==='files')return;const r=c.getBoundingClientRect(),lo=262,hi=innerWidth-318;if(r.left<lo)cv.scrollLeft-=lo-r.left+20;else if(r.right>hi)cv.scrollLeft+=r.right-hi+40}
-function render(){renderTop();renderBoard();renderLayers();renderInspector();renderTools();reveal()}
-function boot(){mode='line';zoom=fitZoom();$('#canvas').scrollLeft=0;services=seed();sid='appliedin';selected='WI-042';tab='details';query='';scenario='repair';$('#search').value='';render()}
+function renderEmpty(){
+  $('#service').innerHTML='<option>No services</option>';$('#people').innerHTML='';$('#modes').innerHTML='';
+  const b=$('#board');b.className='board docs';b.style.transform='';b.parentElement.style.height='';b.parentElement.style.width='';
+  b.innerHTML='<div class="doc"><div class="doc-name"><span>Service Line</span></div><pre>No service yet.\n\nA service is a git repository on this computer.\nAdd one, then create a work item and start it.</pre></div>';
+  $('#layers').innerHTML='<div class="sec"><div class="sec-title">Services</div><p class="muted" style="padding:0 8px 8px">None yet.</p><button class="btn primary" data-act="add-service">Add a service</button></div>';
+  $('#inspector').innerHTML='<div class="sec"><h1>Start here</h1><p class="muted">Add a repository as a service. Its work items will appear on the line.</p></div>';
+  $('#tools').innerHTML='<button class="btn primary" data-act="add-service">Add a service</button>';
+}
+function render(){if(!sid){renderEmpty();return}renderTop();renderBoard();renderLayers();renderInspector();renderTools();reveal()}
+function boot(){mode='line';zoom=fitZoom();$('#canvas').scrollLeft=0;if(LIVE){services={};sid=null;selected=null;tab='details';refresh(true);if(!window.__poll)window.__poll=setInterval(()=>refresh(),2000);return}services=seed();sid='appliedin';selected='WI-042';tab='details';query='';scenario='repair';$('#search').value='';render()}
 
 document.addEventListener('click',e=>{
   const t=e.target.closest('[data-item],[data-service],[data-tab],[data-risk],[data-act],[data-close],[data-mode],[data-state],[data-wftab],[data-file]');if(!t)return;
-  if(t.dataset.mode){mode=t.dataset.mode;$('#canvas').scrollLeft=0;$('#canvas').scrollTop=0;render();return}
+  if(t.dataset.mode){mode=t.dataset.mode;$('#canvas').scrollLeft=0;$('#canvas').scrollTop=0;if(mode==='files'&&LIVE){loadFiles().then(render);return}render();return}
   if(t.dataset.state){selState=t.dataset.state;wfTab='state';render();return}
   if(t.dataset.wftab){wfTab=t.dataset.wftab;renderInspector();return}
   if(t.dataset.file){selFile=t.dataset.file;render();return}
   if(t.dataset.close!==undefined){$('#dialog').close();return}
-  if(t.dataset.item){selected=t.dataset.item;render();return}
+  if(t.dataset.item){selected=t.dataset.item;liveFiles=null;render();return}
   if(t.dataset.service){sid=t.dataset.service;selected=svc().items[0]?.id||null;tab='details';render();return}
   if(t.dataset.tab){tab=t.dataset.tab;renderInspector();return}
-  if(t.dataset.risk){const w=cur();if(w&&!w.approved){w.risk=t.dataset.risk;push(w,'step/end','You set risk to '+w.risk);render()}return}
+  if(t.dataset.risk){const w=cur();if(LIVE){if(w&&!w.approved&&w.status==='waiting')send('risk',{risk:t.dataset.risk});return}if(w&&!w.approved){w.risk=t.dataset.risk;push(w,'step/end','You set risk to '+w.risk);render()}return}
   if(t.dataset.act)act(t.dataset.act);
 });
 document.addEventListener('change',e=>{
-  if(e.target.id==='service'){sid=e.target.value;selected=svc().items[0]?.id||null;tab='details';render()}
+  if(e.target.id==='service'&&services[e.target.value]){sid=e.target.value;selected=svc().items[0]?.id||null;tab='details';liveFiles=null;render()}
   if(e.target.id==='exec'){const w=cur();w.executor=e.target.value;push(w,'step/end',`Implementer set to ${w.executor}; ${other(w.executor)} verifies`);render()}
   if(e.target.id==='scenario')scenario=e.target.value;
 });
