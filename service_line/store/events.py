@@ -129,6 +129,14 @@ class RunLog:
         self._events.append(event)
         return event
 
+    def start(self, kind: str, **data: Any) -> int:
+        """Open a bracket (`state`, `call`, or `check`). Returns its event number."""
+        return self.append(f"{kind}/start", data)["seq"]
+
+    def end(self, kind: str, start: int, reason: str, **data: Any) -> dict[str, Any]:
+        """Close the bracket opened by event `start`."""
+        return self.append(f"{kind}/end", {"start": start, "reason": reason, **data})
+
     def close(self) -> None:
         self._lock.release()
 
@@ -137,3 +145,59 @@ class RunLog:
 
     def __exit__(self, *exc: object) -> None:
         self.close()
+
+
+SIDE_EFFECTS = ("call", "check")
+
+
+def _open_brackets(events: list[dict[str, Any]]) -> dict[int, dict[str, Any]]:
+    opened: dict[int, dict[str, Any]] = {}
+    for event in events:
+        kind, _, edge = event["type"].partition("/")
+        if edge == "start":
+            opened[event["seq"]] = event
+        elif edge == "end":
+            opened.pop(event["data"].get("start"), None)
+    return opened
+
+
+def close_open(log: RunLog) -> dict[str, Any]:
+    """After a crash, close whatever was left open and say what is known.
+
+    Outcomes:
+      closed            nothing was open
+      not-started       a state was open and no side effect had begun in it
+      effects-finished  every side effect in the open state had ended
+      unknown           a side effect had begun and never ended; it may have run
+    """
+    events = log.events
+    opened = _open_brackets(events)
+    states = [e for e in opened.values() if e["type"] == "state/start"]
+    if not opened:
+        return {"outcome": "closed", "state": None}
+    state = states[-1] if states else None
+    dangling = [e for e in opened.values() if e["type"].split("/")[0] in SIDE_EFFECTS]
+    since = state["seq"] if state else -1
+    began = any(e["seq"] > since and e["type"].split("/")[0] in SIDE_EFFECTS
+                and e["type"].endswith("/start") for e in events)
+    outcome = "unknown" if dangling else "effects-finished" if began else "not-started"
+    for event in sorted(dangling, key=lambda e: -e["seq"]):
+        log.end(event["type"].split("/")[0], event["seq"], "interrupted", outcome="unknown")
+    for event in reversed(states):
+        log.end("state", event["seq"], "interrupted", outcome=outcome)
+    return {"outcome": outcome, "state": state["data"].get("name") if state else None}
+
+
+def fork(parent: RunLog, directory: Path, run_id: str, upto: int) -> RunLog:
+    """Start a new run from the first `upto + 1` events of another.
+
+    The events are copied, not referenced. A marker records where they came
+    from, and anything open at the cut is closed.
+    """
+    child = RunLog.create(directory, run_id=run_id, clock=parent._clock)
+    prefix = parent.events[: upto + 1]
+    for event in prefix:
+        child.append(event["type"], event["data"])
+    child.append("run/forked", {"from": parent.run_id, "inherited": len(prefix)})
+    close_open(child)
+    return child
