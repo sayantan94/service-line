@@ -91,6 +91,7 @@ workflows/software-change.asl.json  Proposed workflow; no runtime included
 workflows/post-deploy-observe.asl.json  Proposed observe loop; no runtime included
 templates/                         Per-service verification template
 service-line-ui.html               Interactive mock UI
+service-line-ui-next.html          Canvas UI under review as its replacement
 service-line.html                  Standalone architecture document
 design/                            Runtime design: one overview diagram and a page per part
 service-line-verification.md       Verification contract for this prototype

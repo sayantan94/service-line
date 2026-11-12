@@ -1,0 +1,379 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Service Line</title>
+<meta name="description" content="Service Line canvas: follow work items through the line, with sample data.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: a full-window canvas with three floating panels (work items, inspector, toolbar).
+   The line is drawn on the canvas as six frames. Agents appear as named cursors. */
+:root{
+  --canvas:#eceef1; --dot:#d5d9df; --panel:#ffffff; --raised:#f6f7f9; --line:#e2e5ea; --line-strong:#cfd4dc;
+  --ink:#1a1e24; --muted:#687281; --faint:#98a1ae;
+  --select:#2f6feb; --select-soft:#e6eeff;
+  --you:#2f6feb; --codex:#0d9488; --claude:#7c5ce0;
+  --ok:#2c8a57; --ok-soft:#e5f4ec; --warn:#b9600f; --warn-soft:#fdf0e1; --bad:#c2362b; --bad-soft:#fdecea;
+  --shadow:0 1px 2px rgba(20,28,40,.06),0 8px 28px rgba(20,28,40,.10);
+  --sans:"Instrument Sans",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+  --mono:"JetBrains Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
+}
+body[data-theme=dark]{
+  --canvas:#16181c; --dot:#2a2e35; --panel:#22252b; --raised:#2a2e35; --line:#343942; --line-strong:#454b56;
+  --ink:#eceff3; --muted:#a0a9b6; --faint:#737c89;
+  --select:#6b9bff; --select-soft:#22314f;
+  --you:#6b9bff; --codex:#34c3b3; --claude:#a48bf2;
+  --ok:#5fc48d; --ok-soft:#1d3327; --warn:#e79a4f; --warn-soft:#3a2a18; --bad:#ee7c72; --bad-soft:#3d2220;
+  --shadow:0 1px 2px rgba(0,0,0,.4),0 10px 30px rgba(0,0,0,.45);
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{margin:0;font:12px/1.45 var(--sans);color:var(--ink);background:var(--canvas);overflow:hidden;-webkit-font-smoothing:antialiased}
+button,select,input,textarea{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:2px solid var(--select);outline-offset:2px}
+.mono{font-family:var(--mono);font-size:11px}
+.muted{color:var(--muted)}
+
+/* canvas */
+.canvas{position:fixed;inset:0;overflow:auto;cursor:grab;background-color:var(--canvas);background-image:radial-gradient(var(--dot) 1px,transparent 1px);background-size:20px 20px}
+.board-wrap{padding:76px 318px 110px 262px;width:max-content;min-width:100%}
+.board{position:relative;width:1166px;height:610px;transform-origin:0 0}
+.board svg{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;overflow:visible}
+.wire{fill:none;stroke:var(--line-strong);stroke-width:1.5}
+.wire.warn{stroke:var(--warn);stroke-dasharray:5 4}
+.wire-label{font:11px var(--sans);fill:var(--muted)}
+.wire-label.warn{fill:var(--warn)}
+.frame{position:absolute;top:120px;width:176px;height:400px}
+.frame-name{position:absolute;top:-22px;left:0;right:0;display:flex;justify-content:space-between;font-size:11px;color:var(--muted)}
+.frame-name b{font-weight:500;color:var(--ink)}
+.frame-body{min-height:100%;background:var(--panel);border:1px solid var(--line);border-radius:4px;padding:10px;display:flex;flex-direction:column;gap:8px}
+.frame.you .frame-body{background:linear-gradient(var(--select-soft),var(--panel) 90px)}
+.loop{position:absolute;top:30px;width:176px;height:42px;border:1px dashed var(--line-strong);border-radius:6px;padding:5px 9px;display:flex;flex-direction:column;font-size:10.5px;color:var(--muted);line-height:1.35}
+.loop b{font-weight:500;color:var(--ink);font-size:11px}
+.frame-who{font-size:11px;color:var(--muted);padding:0 2px 2px}
+.empty{font-size:11px;color:var(--faint);padding:14px 2px}
+.card{position:relative;cursor:pointer;text-align:left;background:var(--panel);border:1px solid var(--line-strong);border-radius:6px;padding:9px 10px 10px;display:flex;flex-direction:column;gap:5px;width:100%}
+.card:hover{border-color:var(--select)}
+.card[aria-pressed=true]{border-color:var(--select);box-shadow:0 0 0 1px var(--select)}
+.card .handle{position:absolute;width:7px;height:7px;background:var(--panel);border:1.5px solid var(--select)}
+.card .handle.a{left:-4px;top:-4px}.card .handle.b{right:-4px;top:-4px}.card .handle.c{left:-4px;bottom:-4px}.card .handle.d{right:-4px;bottom:-4px}
+.card-top{display:flex;justify-content:space-between;gap:6px;align-items:center;color:var(--muted);font-size:10.5px}
+.card-title{font-weight:500;font-size:12.5px;line-height:1.35}
+.card-meta{display:flex;gap:6px;align-items:center;flex-wrap:wrap;font-size:10.5px;color:var(--muted)}
+.pin{position:absolute;right:-9px;top:-11px;min-width:20px;height:20px;border-radius:10px 10px 10px 2px;background:var(--claude);color:#fff;font-size:10px;font-weight:600;display:grid;place-items:center;padding:0 5px;box-shadow:var(--shadow)}
+.pin.codex{background:var(--codex)}
+.cursor{position:absolute;right:8px;bottom:-20px;display:flex;align-items:flex-start;gap:2px;z-index:3;pointer-events:none}
+.cursor svg{position:static;width:14px;height:16px;flex:none}
+.cursor span{margin-top:9px;padding:2px 7px;border-radius:3px 9px 9px 9px;color:#fff;font-size:10.5px;font-weight:500;white-space:nowrap}
+@media (prefers-reduced-motion:no-preference){.cursor.busy{animation:nudge 2.6s ease-in-out infinite}}
+@keyframes nudge{50%{transform:translate(4px,-3px)}}
+
+/* chips */
+.dot{display:inline-flex;align-items:center;gap:5px;font-size:10.5px;white-space:nowrap}
+.dot::before{content:"";width:6px;height:6px;border-radius:50%;background:var(--faint)}
+.dot.running::before{background:var(--select)}.dot.waiting::before,.dot.changes::before,.dot.blocked::before,.dot.inconclusive::before{background:var(--warn)}
+.dot.ready::before,.dot.passed::before{background:var(--ok)}.dot.failed::before{background:var(--bad)}
+.risk{font-size:10px;padding:0 6px;border-radius:3px;border:1px solid var(--line-strong);color:var(--muted);line-height:16px}
+.risk.medium{color:var(--warn);border-color:transparent;background:var(--warn-soft)}
+.risk.high{color:var(--bad);border-color:transparent;background:var(--bad-soft)}
+
+/* floating panels */
+.panel{position:fixed;background:var(--panel);border:1px solid var(--line);border-radius:12px;box-shadow:var(--shadow);display:flex;flex-direction:column;z-index:10}
+.top{top:10px;left:10px;right:10px;height:46px;flex-direction:row;align-items:center;gap:12px;padding:0 10px 0 12px}
+.left{top:66px;left:10px;bottom:10px;width:232px}
+.right{top:66px;right:10px;bottom:10px;width:288px}
+.tools{left:50%;bottom:16px;transform:translateX(-50%);flex-direction:row;align-items:center;gap:4px;padding:6px;border-radius:14px;max-width:calc(100vw - 20px)}
+.logo{width:24px;height:24px;border-radius:6px;background:var(--ink);color:var(--panel);display:grid;place-items:center;font-weight:600;font-size:10px;flex:none}
+.crumb{display:flex;align-items:center;gap:6px;min-width:0}
+.crumb select{border:0;background:transparent;font-weight:600;font-size:13px;padding:4px 2px;max-width:170px}
+.spacer{flex:1}
+.people{display:flex}
+.avatar{width:26px;height:26px;border-radius:50%;border:2px solid var(--panel);margin-left:-6px;display:grid;place-items:center;color:#fff;font-size:10px;font-weight:600}
+.avatar.idle{opacity:.35}
+.ghost{border:0;background:transparent;border-radius:7px;padding:6px 9px;color:var(--muted)}
+.ghost:hover{background:var(--raised);color:var(--ink)}
+a.ghost{text-decoration:none}
+.sec{padding:10px 12px;border-bottom:1px solid var(--line)}
+.sec:last-child{border-bottom:0}
+.sec-title{font-weight:600;font-size:11px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center}
+.scroll{overflow:auto;flex:1;min-height:0}
+.row{display:flex;align-items:center;gap:8px;width:100%;text-align:left;border:0;background:transparent;border-radius:6px;padding:5px 8px;min-height:28px}
+.row:hover{background:var(--raised)}
+.row[aria-current=true],.row[aria-pressed=true]{background:var(--select-soft);color:var(--select)}
+.row .grow{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.row svg{width:12px;height:12px;flex:none;stroke:currentColor;fill:none;stroke-width:1.4}
+.group{font-size:10.5px;color:var(--muted);padding:8px 8px 3px}
+.search{width:100%;border:1px solid var(--line);background:var(--raised);border-radius:7px;padding:6px 9px}
+.tabs{display:flex;gap:2px;padding:8px 8px 0}
+.tabs button{border:0;background:transparent;padding:6px 9px;border-radius:7px;color:var(--muted);font-weight:500}
+.tabs button[aria-selected=true]{background:var(--raised);color:var(--ink)}
+.field{display:grid;grid-template-columns:84px minmax(0,1fr);gap:6px 8px;align-items:center}
+.field dt{color:var(--muted)}.field dd{margin:0;min-width:0}
+.field select{width:100%;border:1px solid var(--line);background:var(--raised);border-radius:6px;padding:4px 6px}
+.seg{display:flex;background:var(--raised);border-radius:7px;padding:2px;gap:2px}
+.seg button{flex:1;border:0;background:transparent;border-radius:5px;padding:4px 0;color:var(--muted)}
+.seg button[aria-pressed=true]{background:var(--panel);color:var(--ink);box-shadow:0 0 0 1px var(--line)}
+.seg button:disabled{cursor:default}
+h1{font-size:14px;line-height:1.3;margin:0 0 4px;font-weight:600}
+p{margin:0}
+ol.phases{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:8px;counter-reset:p}
+ol.phases li{counter-increment:p;display:grid;grid-template-columns:18px 1fr;gap:6px}
+ol.phases li::before{content:counter(p);width:16px;height:16px;border-radius:50%;background:var(--raised);font-size:10px;display:grid;place-items:center;color:var(--muted)}
+ol.phases b{font-weight:500;display:block}
+.crit{display:grid;grid-template-columns:30px 1fr;gap:4px 6px;margin:0}
+.crit dt{color:var(--muted)}.crit dd{margin:0}
+.note{border-radius:8px;padding:8px 10px;background:var(--raised);display:flex;flex-direction:column;gap:3px}
+.note.review{border-left:3px solid var(--claude)}.note.review.codex{border-left-color:var(--codex)}
+.note.warn{background:var(--warn-soft)}
+.check{border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.check+.check{margin-top:6px}
+.check summary{display:flex;justify-content:space-between;gap:8px;padding:7px 9px;cursor:pointer;list-style:none}
+.check summary>span:first-child{min-width:0;overflow-wrap:anywhere}
+.check summary .dot{flex:none}
+.check summary::-webkit-details-marker{display:none}
+.check pre{margin:0;padding:8px 9px;background:var(--raised);border-top:1px solid var(--line);font:10.5px/1.5 var(--mono);white-space:pre-wrap;overflow-wrap:anywhere}
+.gate{border-radius:8px;padding:9px 10px;display:flex;flex-direction:column;gap:2px;background:var(--raised)}
+.gate.passed{background:var(--ok-soft)}.gate.failed{background:var(--bad-soft)}.gate.inconclusive{background:var(--warn-soft)}
+.log{margin:0;padding:0;list-style:none;font:10.5px/1.5 var(--mono)}
+.log li{display:grid;grid-template-columns:22px 92px 1fr;gap:6px;padding:4px 0;border-bottom:1px solid var(--line)}
+.log li span:first-child{color:var(--faint)}.log li span:nth-child(2){color:var(--select)}
+.log li span:last-child{font-family:var(--sans);font-size:11px}
+.btn{border:1px solid var(--line-strong);background:var(--panel);border-radius:9px;padding:7px 12px;font-weight:500;white-space:nowrap}
+.btn:hover{background:var(--raised)}
+.btn.primary{background:var(--select);border-color:var(--select);color:#fff}
+.btn.primary:hover{filter:brightness(1.08)}
+.btn:disabled{opacity:.45;cursor:default}
+.tools select{border:0;background:transparent;padding:7px 4px;color:var(--muted);max-width:150px}
+.tools .sep{width:1px;height:20px;background:var(--line);margin:0 4px}
+.zoom{min-width:44px;text-align:center;color:var(--muted)}
+.sample{font-size:11px;color:var(--muted);border:1px solid var(--line);border-radius:999px;padding:2px 9px;white-space:nowrap}
+dialog{border:1px solid var(--line);border-radius:14px;background:var(--panel);color:var(--ink);box-shadow:var(--shadow);padding:18px;width:min(420px,calc(100vw - 32px))}
+dialog::backdrop{background:rgba(15,20,30,.35)}
+dialog h2{margin:0 0 4px;font-size:14px}
+dialog label{display:block;margin:12px 0 4px;color:var(--muted)}
+dialog input,dialog textarea,dialog select{width:100%;border:1px solid var(--line);background:var(--raised);border-radius:7px;padding:7px 9px}
+dialog textarea{min-height:64px;resize:vertical}
+.pair{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.actions{display:flex;justify-content:flex-end;gap:8px;margin-top:16px}
+.toast{position:fixed;left:50%;bottom:76px;transform:translateX(-50%);background:var(--ink);color:var(--panel);padding:8px 14px;border-radius:9px;z-index:20;max-width:calc(100vw - 32px)}
+[hidden]{display:none!important}
+
+@media (max-width:900px){
+  body{overflow:auto}
+  .canvas{position:static;height:56vh;margin-top:62px}
+  .board-wrap{padding:34px 16px 20px}
+  .panel.left,.panel.right{position:static;width:auto;margin:10px;max-height:none}
+  .panel.right{margin-bottom:84px}
+  .left .scroll{max-height:220px}
+  .crumb select{max-width:120px}
+  .people{display:none}
+}
+</style>
+</head>
+<body data-theme="light">
+
+<div class="canvas" id="canvas" aria-label="The line"><div class="board-wrap"><div class="board" id="board"></div></div></div>
+
+<header class="panel top">
+  <span class="logo">SL</span>
+  <div class="crumb"><span class="muted">Service Line /</span><select id="service" aria-label="Service"></select></div>
+  <span class="sample" title="Nothing here runs an agent or a test">Sample data</span>
+  <span class="spacer"></span>
+  <div class="people" id="people" aria-label="Who is working on the selected item"></div>
+  <a class="ghost" href="docs/" target="_blank" rel="noopener">Docs</a>
+  <a class="ghost" href="service-line-ui.html">Classic view</a>
+  <button class="ghost" id="theme" aria-label="Switch theme">Dark</button>
+</header>
+
+<aside class="panel left" aria-label="Work items">
+  <div class="sec"><input class="search" id="search" type="search" placeholder="Find a work item" aria-label="Find a work item"></div>
+  <div class="scroll" id="layers"></div>
+</aside>
+
+<aside class="panel right" aria-label="Selected work item" id="inspector"></aside>
+
+<div class="panel tools" role="toolbar" aria-label="Actions" id="tools"></div>
+<dialog id="dialog"><form id="dialog-form" method="dialog"></form></dialog>
+<div class="toast" id="toast" role="status" hidden></div>
+
+<script>
+const $=s=>document.querySelector(s),esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const STAGES=[['Intake','You'],['Plan','Implementer plans, verifier reviews'],['Approval','You'],['Implement','Implementer'],['Verify','Engine checks, then verifier'],['Ready','You']];
+const STATUS={queued:'Queued',waiting:'Needs your approval',changes:'Plan being revised',running:'Running',blocked:'Needs attention',ready:'Ready for review',passed:'Passed',failed:'Failed',inconclusive:'Inconclusive',not_run:'Not run'};
+const RISK={low:'Low risk',medium:'Medium risk',high:'High risk'};
+const RISK_NOTE={low:'A small, contained change that is easy to reverse. You review the evidence summary.',medium:'Touches a shared path other code depends on. You review the diff and the evidence.',high:'Touches state or data that is hard to reverse. A named reviewer records acceptance.'};
+const other=e=>e==='Codex'?'Claude':'Codex',tone=e=>e==='Codex'?'codex':'claude';
+const cursor=(name,busy)=>`<span class="cursor ${busy?'busy':''}"><svg viewBox="0 0 14 16" aria-hidden="true"><path d="M1 1l11 6.2-5 1.3L4.6 14z" fill="var(--${tone(name)})" stroke="var(--panel)" stroke-width="1"/></svg><span style="background:var(--${tone(name)})">${name}</span></span>`;
+
+function seed(){
+  const item=(o)=>({status:'queued',phase:'queued',version:1,revision:'r1',repairs:0,attempt:0,results:{},log:[],...o});
+  const S={
+    appliedin:{name:'AppliedIn',repo:'/workspace/AppliedIn',checks:{retry:['Submission retry rules','pytest tests/tools/test_unconfirmed_submit_is_terminal.py'],identity:['Duplicate identity guard','pytest tests/core/test_reapply.py'],prefs:['Preference inheritance','node --test tests/web/preferences.test.cjs'],suite:['Regression suite','pytest -q']},items:[
+      item({id:'WI-042',title:'Prevent duplicate applications',type:'Bug',executor:'Codex',risk:'medium',status:'waiting',phase:'approval',desc:'Keep an unconfirmed submission out of the retry queue. Keep retries for failures that happen before a form is opened.',phases:[['Reproduce the failure','Add an offline regression for the uncertain submission path.'],['Fix the retry decision','Keep uncertain submissions terminal; keep retries for a browser that never opened the form.'],['Hand over for verification','Self-check, then commit a checkpoint.']],criteria:['A submission with no confirmation is never retried.','Failures before a form opens remain retryable.','The same identity cannot submit the same application twice.'],checks:['retry','identity','suite'],log:[['step/end','Research finished: 6 files mapped'],['step/end','Plan v1 written with 3 phases'],['step/end','Plan review by Claude: no blocking finding']]}),
+      item({id:'WI-041',title:'Preserve company preference defaults',type:'Feature',executor:'Claude',risk:'low',status:'running',phase:'implement',approved:1,desc:'Saving a company preference unchanged should keep the shared default.',phases:[['Inspect inheritance','Read how global preferences and company overrides are stored.'],['Preserve the default','Clear redundant overrides when a value matches the shared preference.']],criteria:['Unchanged values keep inheriting the global preference.'],checks:['prefs','suite'],log:[['step/end','Plan v1 approved by you'],['step/start','Implement, phase 1 of 2'],['call/start','Claude working in its checkout']]}),
+      item({id:'WI-040',title:'Protect identity on reapplication',type:'Bug',executor:'Codex',risk:'medium',status:'ready',phase:'done',approved:1,attempt:1,desc:'Reject a reapplication from an identity already used for the posting.',phases:[['Reproduce the duplicate','Use stored application fixtures.'],['Preserve history','Reject a reused identity without rewriting the original application.']],criteria:['A reused identity cannot apply to the posting again.'],checks:['identity','suite'],log:[['check/end','Engine checks passed on r1'],['step/end','Verify by Claude: all criteria met, 2 hidden scenarios passed'],['step/end','Evidence gate: passed']]}),
+      item({id:'WI-043',title:'Update dependency checks',type:'Maintenance',executor:'Codex',risk:'low',desc:'Add a repeatable dependency check to the development workflow.',phases:[['Inspect existing checks','Find the missing dependency validation.'],['Add the check','Keep the change within the request.']],criteria:['The dependency check runs locally and reports failures a person can act on.'],checks:['suite'],log:[['step/end','Request recorded']]})]},
+    serviceline:{name:'Service Line',repo:'/workspace/service-line',checks:{suite:['Engine tests','python3 -m unittest discover -s tests']},items:[
+      item({id:'SL-001',title:'Resume interrupted workflow runs',type:'Feature',executor:'Claude',risk:'high',status:'waiting',phase:'approval',desc:'After a crash, close the open step and run it again from the last checkpoint.',phases:[['Close open steps','Append interrupted end events on restart.'],['Classify the outcome','Nothing started, or outcome unknown.'],['Reset and rerun','Return the checkout to the last checkpoint when the outcome is unknown.']],criteria:['A resumed run keeps its approved plan and completed steps.','An unfinished verification is never restored as passed.'],checks:['suite'],log:[['step/end','Plan v1 written with 3 phases'],['step/end','Plan review by Codex: risk raised to high']]}),
+      item({id:'SL-002',title:'Pin the verification guide to each approval',type:'Feature',executor:'Codex',risk:'medium',desc:'Record the guide version with the approved plan so later edits cannot weaken a run.',phases:[['Read the guide','Resolve it from the service repository.'],['Pin it','Store the version and hash with the approval.']],criteria:['Every approved plan records its guide version.'],checks:['suite'],log:[['step/end','Request recorded']]})]},
+    website:{name:'Website',repo:'~/Projects/website',checks:{suite:['Application checks','npm test']},items:[]}
+  };
+  const ready=S.appliedin.items[2];for(const c of ready.checks)ready.results[c]=result(ready,S.appliedin,c,'passed');ready.results.review=result(ready,S.appliedin,'review','passed');
+  return S;
+}
+let services,sid,selected,tab='details',query='',scenario='repair',zoom=1,theme='light',toastTimer;
+const svc=()=>services[sid],cur=()=>svc().items.find(w=>w.id===selected);
+function stageOf(w){if(w.status==='queued')return 0;if(w.status==='changes')return 1;if(w.status==='waiting')return 2;if(w.status==='ready')return 5;return ['implement','repair'].includes(w.phase)?3:4}
+function push(w,type,text){w.log.push([type,text])}
+function result(w,s,id,verdict){
+  if(id==='review')return {status:verdict,out:JSON.stringify({verdict,by:other(w.executor),revision:w.revision,plan:'v'+w.version,criteria:w.criteria.map((c,i)=>({id:'AC'+(i+1),status:verdict})),hiddenScenarios:{run:2,passed:verdict==='passed'?2:0,visibleToImplementer:false},note:'Sample review. No agent was run.'},null,2)};
+  const cmd=s.checks[id][1];
+  return {status:verdict,out:verdict==='passed'?`$ ${cmd}\n\nSample output: all selected tests passed.\nexit 0 on ${w.revision}`:verdict==='failed'?`$ ${cmd}\n\nFAILED: unconfirmed submission must not be retried\nexpected is_retryable(...) to be false, got true\nexit 1 on ${w.revision}`:`$ ${cmd}\n\nERROR: the test environment could not load a dependency.\nNo assertion ran.\nexit 2 on ${w.revision}`};
+}
+function gate(w){
+  if(!w.approved)return ['not_run','Waiting for your approval','No check runs before the plan is approved.'];
+  const r=[...w.checks,'review'].map(c=>w.results[c]?.status);
+  if(r.includes('failed'))return ['failed','A check failed','The implementer repairs inside the approved plan, then every check runs again.'];
+  if(r.includes('inconclusive'))return ['inconclusive','Evidence is missing','This cannot count as a pass. Fix the environment and retry the checks.'];
+  if(r.every(x=>x==='passed'))return ['passed','Evidence complete','Every check and the verifier\'s review passed on '+w.revision+'.'];
+  return ['not_run','Verification not finished','Every check and the review must pass on the current revision.'];
+}
+function advance(){
+  const w=cur(),s=svc();if(!w||w.status!=='running')return;
+  if(['implement','repair'].includes(w.phase)){
+    const verdict=w.phase==='repair'?'passed':scenario==='blocked'?'inconclusive':scenario==='repair'&&w.attempt===0?'failed':'passed';
+    w.attempt++;push(w,'step/end',`${w.phase==='repair'?'Repair':'Implement'} finished, checkpoint ${w.revision}`);push(w,'check/start','Engine runs format, lint, build and tests');
+    w.checks.forEach((c,i)=>w.results[c]=result(w,s,c,i===0?verdict:verdict==='inconclusive'?'inconclusive':'passed'));
+    push(w,'check/end',verdict==='passed'?'All checks passed':verdict==='failed'?'1 check failed':'Checks could not run');
+    if(verdict==='failed')w.phase='failed';else if(verdict==='inconclusive'){w.phase='blocked';w.status='blocked'}else w.phase='review';
+    tab='checks';
+  }else if(w.phase==='failed'){
+    if(w.repairs>=2){w.status='blocked';w.phase='limit';push(w,'step/end','Repair limit reached')}
+    else{w.repairs++;w.revision='r'+(w.repairs+1);w.results={};w.phase='repair';push(w,'step/start',`Repair ${w.repairs} of 2: ${w.executor} finds the cause first`);tab='activity'}
+  }else if(w.phase==='review'){
+    push(w,'call/start',`${other(w.executor)} exercises the service and runs hidden scenarios`);w.results.review=result(w,s,'review','passed');push(w,'call/end',`${other(w.executor)}: every criterion met`);
+    if(gate(w)[0]==='passed'){w.status='ready';w.phase='done';push(w,'step/end','Evidence gate: passed. Ready for your review')}
+    tab='checks';
+  }
+  render();
+}
+function act(name){
+  const w=cur();
+  if(name==='new')return openNew();
+  if(name==='reset'){boot();toast('Sample data reset.');return}
+  if(name==='zoom-in')zoom=Math.min(1.5,+(zoom+.1).toFixed(1));
+  if(name==='zoom-out')zoom=Math.max(.5,+(zoom-.1).toFixed(1));
+  if(name==='fit')zoom=fitZoom();
+  if(!w){render();return}
+  if(name==='draft'&&w.status==='queued'){w.status='waiting';w.phase='approval';push(w,'step/end','Research finished');push(w,'step/end','Plan v1 written');push(w,'step/end',`Plan review by ${other(w.executor)}: no blocking finding`);tab='details'}
+  if(name==='approve'&&w.status==='waiting'){w.approved=w.version;w.status='running';w.phase='implement';push(w,'step/end',`Plan v${w.version} approved by you. Plan, risk and checks are now locked`);push(w,'step/start','Implement, phase 1 of '+w.phases.length);push(w,'call/start',`${w.executor} working in its checkout`);toast('Plan approved. Use Next step to follow the run.')}
+  if(name==='changes'&&w.status==='waiting')return openChanges(w);
+  if(name==='revise'&&w.status==='changes'){w.version++;w.criteria.push(w.feedback);w.status='waiting';w.phase='approval';push(w,'step/end',`Plan v${w.version} written from your feedback`);push(w,'step/end',`Plan review by ${other(w.executor)}: no blocking finding`)}
+  if(name==='retry'&&w.status==='blocked'){scenario='pass';w.status='running';w.phase='repair';w.results={};push(w,'step/start','Environment fixed. Checks will run again');toast('Use Next step to run the checks again.')}
+  if(name==='next')return advance();
+  render();
+}
+function openNew(){
+  dialog(`<h2>New work item</h2><p class="muted">Say what you want. The plan comes back to you for approval.</p><label for="n-title">Title</label><input id="n-title" name="title" required maxlength="100"><div class="pair"><div><label for="n-type">Type</label><select id="n-type" name="type"><option>Feature</option><option>Bug</option><option>Refactor</option><option>Maintenance</option></select></div><div><label for="n-exec">Implementer</label><select id="n-exec" name="executor"><option>Codex</option><option>Claude</option></select></div></div><label for="n-goal">Outcome</label><textarea id="n-goal" name="goal" required></textarea><label for="n-crit">How you will know it worked, one per line</label><textarea id="n-crit" name="criteria" required></textarea><div class="actions"><button class="btn" type="button" data-close>Cancel</button><button class="btn primary">Create work item</button></div>`,d=>{
+    const s=svc(),prefix=s.items[0]?.id.slice(0,2)||s.name.slice(0,2).toUpperCase(),n=Math.max(0,...s.items.map(w=>+w.id.slice(3)))+1,id=prefix+'-'+String(n).padStart(3,'0');
+    s.items.unshift({id,title:d.get('title').trim(),type:d.get('type'),executor:d.get('executor'),risk:'low',status:'queued',phase:'queued',version:1,revision:'r1',repairs:0,attempt:0,results:{},desc:d.get('goal').trim(),phases:[['Research','Map the code, rules and lessons that apply.'],['Build','Make the change the plan describes.']],criteria:d.get('criteria').split('\n').map(x=>x.trim()).filter(Boolean),checks:['suite'],log:[['step/end','Request recorded']]});
+    selected=id;tab='details';render();toast('Work item created. Draft a plan to continue.')});
+}
+function openChanges(w){dialog(`<h2>Request plan changes</h2><p class="muted">${esc(w.id)}, plan v${w.version}</p><label for="fb">What should change?</label><textarea id="fb" name="fb" required></textarea><div class="actions"><button class="btn" type="button" data-close>Cancel</button><button class="btn primary">Send back to Plan</button></div>`,d=>{w.feedback=d.get('fb').trim();w.status='changes';w.phase='plan';push(w,'step/end','You asked for changes: '+w.feedback);render()})}
+function dialog(html,done){const f=$('#dialog-form');f.innerHTML=html;f.onsubmit=e=>{e.preventDefault();done(new FormData(f));$('#dialog').close()};$('#dialog').showModal()}
+function toast(t){const el=$('#toast');el.textContent=t;el.hidden=false;clearTimeout(toastTimer);toastTimer=setTimeout(()=>el.hidden=true,3600)}
+
+function renderBoard(){
+  const s=svc(),x=i=>20+i*190,chip=(i,name,text)=>`<div class="loop" style="left:${x(i)}px"><b>${name}</b><span>${text}</span></div>`;let h='';
+  h+=`<svg aria-hidden="true"><defs><marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0L10,5L0,10z" fill="var(--line-strong)"/></marker><marker id="arrw" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0L10,5L0,10z" fill="var(--warn)"/></marker></defs>`;
+  for(let i=0;i<5;i++)h+=`<path class="wire" d="M${x(i)+176},320 H${x(i+1)-2}" marker-end="url(#arr)"/>`;
+  h+=`<path class="wire" d="M${x(0)+130},72 V96" marker-end="url(#arr)"/><path class="wire" d="M${x(5)+130},98 V74" marker-end="url(#arr)"/>`;
+  h+=`<path class="wire warn" d="M${x(5)},51 H${x(0)+180}" marker-end="url(#arrw)"/><text class="wire-label warn" x="${(x(0)+x(5)+176)/2}" y="43" text-anchor="middle">a regression after deploy becomes a new work item</text>`;
+  h+=`<path class="wire warn" d="M${x(4)+88},521 C${x(4)+88},575 ${x(3)+88},575 ${x(3)+88},524" marker-end="url(#arrw)"/><text class="wire-label warn" x="${(x(3)+x(4))/2+88}" y="586" text-anchor="middle">a check failed: repair, at most twice</text></svg>`;
+  h+=chip(0,'Maintain','a scheduled scan proposes work')+chip(5,'Observe','live signals after you deploy');
+  STAGES.forEach(([name,who],i)=>{
+    const lane=s.items.filter(w=>stageOf(w)===i);
+    h+=`<section class="frame ${[0,2,5].includes(i)?'you':''}" style="left:${x(i)}px" aria-label="${name}"><div class="frame-name"><b>${name}</b><span>${lane.length||''}</span></div><div class="frame-body"><div class="frame-who">${who}</div>${lane.map(card).join('')||'<div class="empty">Nothing here</div>'}</div></section>`});
+  const b=$('#board');b.innerHTML=h;b.style.transform=`scale(${zoom})`;b.parentElement.style.height=(610*zoom+186)+'px';b.parentElement.style.width=(1166*zoom+(innerWidth>900?580:32))+'px';
+}
+function card(w){
+  const sel=w.id===selected,st=stageOf(w),v=other(w.executor);
+  const who=w.status==='running'?(['implement','repair'].includes(w.phase)?cursor(w.executor,true):w.phase==='review'?cursor(v,true):''):w.status==='changes'?cursor(w.executor,true):'';
+  const pin=w.status==='waiting'?`<span class="pin ${tone(v)}" title="Plan review by ${v}">1</span>`:'';
+  return `<button class="card" data-item="${w.id}" aria-pressed="${sel}">${sel?'<i class="handle a"></i><i class="handle b"></i><i class="handle c"></i><i class="handle d"></i>':''}${pin}<span class="card-top"><span class="mono">${w.id}</span><span class="risk ${w.risk}">${RISK[w.risk]}</span></span><span class="card-title">${esc(w.title)}</span><span class="card-meta"><span class="dot ${w.phase==='failed'?'failed':w.status}">${w.phase==='failed'?'Check failed':w.phase==='repair'?'Repairing':w.phase==='review'?'Verifier reviewing':STATUS[w.status]}</span></span>${who}</button>`;
+}
+function renderLayers(){
+  const s=svc(),q=query.toLowerCase(),icon='<svg viewBox="0 0 12 12" aria-hidden="true"><path d="M3 1v10M9 1v10M1 3h10M1 9h10"/></svg>';
+  let h=`<div class="sec"><div class="sec-title">Services</div>${Object.entries(services).map(([id,x])=>`<button class="row" data-service="${id}" aria-current="${id===sid}"><span class="grow">${esc(x.name)}</span><span class="muted">${x.items.length}</span></button>`).join('')}</div><div class="sec"><div class="sec-title">Work items<button class="ghost" data-act="new" style="padding:2px 7px">New</button></div>`;
+  let any=false;
+  STAGES.forEach(([name],i)=>{const lane=s.items.filter(w=>stageOf(w)===i&&(w.title+' '+w.id).toLowerCase().includes(q));if(!lane.length)return;any=true;h+=`<div class="group">${name}</div>`+lane.map(w=>`<button class="row" data-item="${w.id}" aria-pressed="${w.id===selected}">${icon}<span class="grow">${esc(w.title)}</span><span class="dot ${w.phase==='failed'?'failed':w.status}" aria-label="${STATUS[w.status]}"></span></button>`).join('')});
+  if(!any)h+=`<p class="muted" style="padding:6px 8px">${s.items.length?'No work item matches.':'No work items yet. Create one to see it on the line.'}</p>`;
+  $('#layers').innerHTML=h+'</div>';
+}
+function renderInspector(){
+  const w=cur(),el=$('#inspector');
+  if(!w){el.innerHTML=`<div class="sec"><h1>Nothing selected</h1><p class="muted">Select a work item on the canvas or in the list. Its plan, checks and activity appear here.</p></div>`;return}
+  const v=other(w.executor),locked=!!w.approved,g=gate(w);
+  let body='';
+  if(tab==='details'){
+    body=`<div class="sec"><dl class="field"><dt>Implementer</dt><dd>${locked?esc(w.executor):`<select id="exec" aria-label="Implementer"><option ${w.executor==='Codex'?'selected':''}>Codex</option><option ${w.executor==='Claude'?'selected':''}>Claude</option></select>`}</dd><dt>Verifier</dt><dd>${v} <span class="muted">always the other one</span></dd><dt>Workflow</dt><dd class="mono">software-change v1</dd><dt>Plan</dt><dd>v${w.version}${locked?', approved':', not approved'}</dd></dl></div>
+    <div class="sec"><div class="sec-title">Risk${locked?'<span class="muted" style="font-weight:400">locked at approval</span>':''}</div><div class="seg" role="group" aria-label="Risk level">${Object.keys(RISK).map(r=>`<button data-risk="${r}" aria-pressed="${w.risk===r}" ${locked?'disabled':''}>${r[0].toUpperCase()+r.slice(1)}</button>`).join('')}</div><p class="muted" style="margin-top:8px">${RISK_NOTE[w.risk]}</p></div>
+    ${w.status==='queued'?`<div class="sec"><div class="note"><b style="font-weight:500">No plan yet</b><span class="muted">The implementer researches the code and writes a plan. The verifier reviews it before it reaches you.</span></div></div>`:`<div class="sec"><div class="sec-title">Plan phases</div><ol class="phases">${w.phases.map(([t,b])=>`<li><span><b>${esc(t)}</b><span class="muted">${esc(b)}</span></span></li>`).join('')}</ol></div>`}
+    <div class="sec"><div class="sec-title">What must be true</div><dl class="crit">${w.criteria.map((c,i)=>`<dt class="mono">AC${i+1}</dt><dd>${esc(c)}</dd>`).join('')}</dl></div>
+    ${w.status==='changes'?`<div class="sec"><div class="note warn"><b style="font-weight:500">You asked for changes</b><span>${esc(w.feedback)}</span></div></div>`:w.status!=='queued'?`<div class="sec"><div class="note review ${tone(v)}"><b style="font-weight:500">Plan review by ${v}</b><span class="muted">No blocking finding. Every criterion has a check that would fail on broken code. Risk level ${w.risk} looks right.</span></div></div>`:''}`;
+  }else if(tab==='checks'){
+    const row=(id,title,sub)=>{const r=w.results[id];return `<details class="check" ${r&&r.status!=='passed'?'open':''}><summary><span><span style="font-weight:500">${esc(title)}</span><br><span class="muted">${esc(sub)}</span></span><span class="dot ${r?.status||'not_run'}">${STATUS[r?.status||'not_run']}</span></summary><pre>${esc(r?.out||'No evidence yet. A result records the command, its output and the revision it ran on.')}</pre></details>`};
+    body=`<div class="sec"><div class="gate ${g[0]}"><b style="font-weight:600">${g[1]}</b><span class="muted">${g[2]}</span></div></div><div class="sec"><div class="sec-title">Run by the engine</div>${w.checks.map(c=>row(c,svc().checks[c][0],svc().checks[c][1])).join('')}</div><div class="sec"><div class="sec-title">Run by the verifier</div>${row('review','Review and hidden scenarios',v+' exercises the service and cannot edit the code')}</div>`;
+  }else{
+    body=`<div class="sec"><dl class="field"><dt>Run log</dt><dd class="mono">runs/run-001/events.jsonl</dd><dt>Revision</dt><dd class="mono">${w.revision}</dd><dt>Repairs</dt><dd>${w.repairs} of 2</dd></dl></div><div class="sec"><ol class="log">${w.log.map(([t,x],i)=>`<li><span>${i}</span><span>${t}</span><span>${esc(x)}</span></li>`).join('')}</ol></div>`;
+  }
+  el.innerHTML=`<div class="sec"><div style="display:flex;justify-content:space-between;gap:8px;margin-bottom:6px"><span class="mono muted">${w.id}, ${esc(w.type)}</span><span class="dot ${w.status}">${STATUS[w.status]}</span></div><h1>${esc(w.title)}</h1><p class="muted">${esc(w.desc)}</p></div><div class="tabs" role="tablist">${[['details','Details'],['checks','Checks'],['activity','Activity']].map(([id,l])=>`<button role="tab" data-tab="${id}" aria-selected="${tab===id}">${l}</button>`).join('')}</div><div class="scroll">${body}</div>`;
+}
+function renderTools(){
+  const w=cur();let main='';
+  if(!w)main='<span class="muted" style="padding:0 8px">Select a work item</span>';
+  else if(w.status==='queued')main='<button class="btn primary" data-act="draft">Draft plan</button>';
+  else if(w.status==='waiting')main='<button class="btn" data-act="changes">Request changes</button><button class="btn primary" data-act="approve">Approve plan</button>';
+  else if(w.status==='changes')main='<button class="btn primary" data-act="revise">Revise plan</button>';
+  else if(w.status==='running')main='<button class="btn primary" data-act="next">Next step</button>';
+  else if(w.status==='blocked')main=w.phase==='limit'?'<span class="muted" style="padding:0 8px">Repair limit reached. Needs your decision</span>':'<button class="btn primary" data-act="retry">Retry checks</button>';
+  else main='<span class="dot ready" style="padding:0 8px">Ready for your review</span>';
+  $('#tools').innerHTML=`<button class="btn" data-act="new">New work item</button><span class="sep"></span>${main}<span class="sep"></span><select id="scenario" aria-label="Sample outcome"><option value="repair">Sample: a check fails</option><option value="pass">Sample: all pass</option><option value="blocked">Sample: evidence missing</option></select><button class="ghost" data-act="reset">Reset</button><span class="sep"></span><button class="ghost" data-act="zoom-out" aria-label="Zoom out">−</button><button class="ghost zoom" data-act="fit" aria-label="Fit to window">${Math.round(zoom*100)}%</button><button class="ghost" data-act="zoom-in" aria-label="Zoom in">+</button>`;
+  $('#scenario').value=scenario;
+}
+function renderTop(){
+  $('#service').innerHTML=Object.entries(services).map(([id,x])=>`<option value="${id}" ${id===sid?'selected':''}>${esc(x.name)}</option>`).join('');
+  const w=cur(),imp=w&&w.status==='running'&&['implement','repair','failed'].includes(w.phase)||w?.status==='changes',ver=w&&w.status==='running'&&w.phase==='review';
+  $('#people').innerHTML=`<span class="avatar" style="background:var(--you)" title="You">Y</span>`+(w?`<span class="avatar ${imp?'':'idle'}" style="background:var(--${tone(w.executor)})" title="${w.executor}, implementer">${w.executor[0]}</span><span class="avatar ${ver?'':'idle'}" style="background:var(--${tone(other(w.executor))})" title="${other(w.executor)}, verifier">${other(w.executor)[0]}</span>`:'');
+  document.body.dataset.theme=theme;$('#theme').textContent=theme==='dark'?'Light':'Dark';document.title='Service Line, '+svc().name;
+}
+const fitZoom=()=>Math.max(.8,Math.min(1.15,+((innerWidth-(innerWidth>900?590:32))/1166).toFixed(2)));
+function reveal(){const c=$('.card[aria-pressed=true]'),cv=$('#canvas');if(!c||innerWidth<=900)return;const r=c.getBoundingClientRect(),lo=262,hi=innerWidth-318;if(r.left<lo)cv.scrollLeft-=lo-r.left+20;else if(r.right>hi)cv.scrollLeft+=r.right-hi+40}
+function render(){renderTop();renderBoard();renderLayers();renderInspector();renderTools();reveal()}
+function boot(){zoom=fitZoom();$('#canvas').scrollLeft=0;services=seed();sid='appliedin';selected='WI-042';tab='details';query='';scenario='repair';$('#search').value='';render()}
+
+document.addEventListener('click',e=>{
+  const t=e.target.closest('[data-item],[data-service],[data-tab],[data-risk],[data-act],[data-close]');if(!t)return;
+  if(t.dataset.close!==undefined){$('#dialog').close();return}
+  if(t.dataset.item){selected=t.dataset.item;render();return}
+  if(t.dataset.service){sid=t.dataset.service;selected=svc().items[0]?.id||null;tab='details';render();return}
+  if(t.dataset.tab){tab=t.dataset.tab;renderInspector();return}
+  if(t.dataset.risk){const w=cur();if(w&&!w.approved){w.risk=t.dataset.risk;push(w,'step/end','You set risk to '+w.risk);render()}return}
+  if(t.dataset.act)act(t.dataset.act);
+});
+document.addEventListener('change',e=>{
+  if(e.target.id==='service'){sid=e.target.value;selected=svc().items[0]?.id||null;tab='details';render()}
+  if(e.target.id==='exec'){const w=cur();w.executor=e.target.value;push(w,'step/end',`Implementer set to ${w.executor}; ${other(w.executor)} verifies`);render()}
+  if(e.target.id==='scenario')scenario=e.target.value;
+});
+{const cv=$('#canvas');let drag=null;cv.addEventListener('pointerdown',e=>{if(e.target.closest('button,select,a,input'))return;drag={x:e.clientX,y:e.clientY,l:cv.scrollLeft,t:cv.scrollTop};cv.setPointerCapture(e.pointerId);cv.style.cursor='grabbing'});cv.addEventListener('pointermove',e=>{if(!drag)return;cv.scrollLeft=drag.l-(e.clientX-drag.x);cv.scrollTop=drag.t-(e.clientY-drag.y)});const end=()=>{drag=null;cv.style.cursor=''};cv.addEventListener('pointerup',end);cv.addEventListener('pointercancel',end)}
+$('#search').addEventListener('input',e=>{query=e.target.value;renderLayers()});
+$('#theme').addEventListener('click',()=>{theme=theme==='dark'?'light':'dark';render()});
+boot();
+</script>
+</body>
+</html>

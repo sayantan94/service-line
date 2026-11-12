@@ -6,6 +6,7 @@ Keep claims about implemented behavior separate from the proposed runtime.
 ## Edit
 
 - `service-line-ui.html`: UI shell, shared styles, and sample state.
+- `service-line-ui-next.html`: canvas UI under review as the replacement; self-contained, with its own sample state.
 - `assets/factory-floor.*`: spatial overview of the same sample state.
 - `service-line.html`: standalone architecture document.
 - `design/*.html`: runtime design in diagrams. `index.html` is the single overview; the other pages cover one part each. Keep them in step with `docs/runtime.md`.
