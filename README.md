@@ -43,12 +43,13 @@ Every level keeps human plan approval. See the [workflow contract](docs/workflow
 | **Instance** | One service's repository, working folder, defaults, and local lessons. |
 | **Work item** | One requested outcome, its criteria, plan, approval, sessions, and runs. |
 | **Workflow** | A versioned ASL-style definition of states, transitions, and limits. |
-| **Executor** | The customer's chosen coding-agent adapter: Codex or Claude. |
+| **Executor** | A coding-agent adapter: Codex or Claude. The customer picks the implementer; the other one verifies. |
 | **Session** | A persistent agent conversation with its own `context.md` and history. |
-| **Run** | One workflow execution, including its checkout, state, checks, and evidence. |
+| **Run** | One workflow execution, including its checkout, event log, checks, and evidence. |
 
 [Primitive definitions and ownership](docs/primitives.md) ·
 [Workflow contract](docs/workflow.md) ·
+[Runtime](docs/runtime.md) ·
 [Verification](docs/verification.md) ·
 [Context and learning](docs/context-and-learning.md) ·
 [Dreaming](docs/dreaming.md)
@@ -57,7 +58,7 @@ Every level keeps human plan approval. See the [workflow contract](docs/workflow
 
 Every service owns a versioned `service-line-verification.md`. It specifies startup
 and reset, test commands, browser actions, traffic replay, expected outcomes, and
-required observations. A separate verification session follows this guide; the
+required observations. A different executor from the implementer follows this guide; the
 engine checks the evidence against the approved plan and current code snapshot.
 
 [Template for a service](templates/service-line-verification.md) ·

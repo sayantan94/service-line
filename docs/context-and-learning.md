@@ -53,7 +53,7 @@ step. `history.jsonl` retains the underlying events. Update the checkpoint at
 meaningful milestones and before a handoff; reconcile it with the checkout and
 structured run state before resuming.
 
-Implementation and verification use separate sessions. A provider switch starts
+Implementation and verification use separate sessions on different executors. A provider switch starts
 a new native conversation with a recorded handoff. Shared reviewed knowledge can
 be reused; an implementation conversation is not the verifier's context.
 
@@ -84,7 +84,7 @@ instances/appliedin/
     ├── approvals/v1.json
     ├── workspace/
     ├── runs/run-001/
-    │   ├── state.json
+    │   ├── events.jsonl          # append-only run log
     │   └── artifacts/
     └── sessions/
         ├── implementation/        # session.json, context.md, history.jsonl

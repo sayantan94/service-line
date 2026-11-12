@@ -18,12 +18,14 @@ root. An approved plan pins that guide and adds checks for the requested change.
 | Part | Responsibility |
 |---|---|
 | **Service guide** | Startup, reset, fixtures, commands, browser flows, replay targets, assertions, required observations. |
-| **Verify skill and session** | Follow the guide, exercise the environment, review the diff and results, return criterion-level findings. |
-| **Engine** | Capture artifacts, validate their provenance and completeness, enforce approval, choose the next state. |
+| **Verifier** | Follow the guide, exercise the environment, review the diff and results, return criterion-level findings. |
+| **Engine** | Run the checks, capture artifacts, validate their provenance and completeness, enforce approval, choose the next state. |
 
-The verify skill is shared instructions, not a separate primitive. Its version is
-pinned with the run. The verifier uses the selected executor in a separate session
-and does not edit the implementation it reviews.
+The verify skills are shared instructions, not a separate primitive. Their versions
+are pinned with the run. The verifier is a different executor from the one that
+implemented the change, in its own session, and it cannot edit the implementation
+it reviews. Format, lint, build, and check commands are run by the engine, not by
+an agent.
 
 ## Exercise the service
 
@@ -39,6 +41,17 @@ Pin fixtures, reset state, preserve relevant ordering, and assert side-effect co
 **Observe:** correlate requests with required server logs, traces, database changes,
 and queue activity. The guide names the signals that matter and explains anything
 not applicable. Missing required observations make the result inconclusive.
+
+## Hidden scenarios
+
+A service can mark some flows and replays in its guide as hidden. They are stored
+outside the implementer's checkout, and the implementer's steps cannot read them.
+Only the verifier runs them.
+
+An implementer that can read every test can write code that passes the tests
+without doing what was asked. A hidden scenario checks the behavior, not the
+implementer's reading of the check. Results from hidden scenarios are evidence
+like any other and are shown at Ready.
 
 ## Risk sets the depth
 

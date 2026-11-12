@@ -14,9 +14,9 @@ The UI calls an instance a **service**. These are two names for the same object.
 | **Instance** | Repository reference, working folder, executor default, work items, verification configuration, local lessons. | AppliedIn |
 | **Work item** | Requested outcome, acceptance criteria, versioned plan and risk level, human approval, sessions, runs. | Prevent duplicate applications |
 | **Workflow** | Versioned states, actions, transitions, timeouts, and repair limits. | `software-change` |
-| **Executor** | Adapter for agent invocation, native session references, tool capabilities, and results. | Codex or Claude |
+| **Executor** | Adapter for agent invocation, native session references, tool limits, and results. A work item has two: the implementer and the verifier. | Codex or Claude |
 | **Session** | Conversation for one work item and one executor, `context.md`, checkpoints, history. | Implementation session |
-| **Run** | Execution of one workflow version: checkout, structured state, attempts, checks, artifacts, errors. | `run-001` |
+| **Run** | Execution of one workflow version: checkout, append-only event log, attempts, checks, artifacts, errors. | `run-001` |
 
 ## Ownership
 
@@ -29,11 +29,11 @@ Instance
 ```
 
 A work item can have multiple runs. Sessions can continue across those runs;
-implementation and verification use separate sessions. Different work items use
+implementation and verification use separate sessions on different executors. Different work items use
 isolated checkouts so concurrent changes do not share a mutable working tree.
 
-The instance provides the executor default. A work item can override it before
-approval. Changing providers creates a new native session with an explicit
+The instance provides the default implementer. A work item can override it before
+approval. The engine assigns the other executor as the verifier. Changing providers creates a new native session with an explicit
 context handoff; it does not convert the previous provider's conversation.
 
 ## What does not need another primitive

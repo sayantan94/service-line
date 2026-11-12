@@ -8,14 +8,41 @@ permalink: /docs/workflow/
 # From request to verified change
 
 1. **Intake.** Record the outcome and acceptance criteria.
-2. **Plan.** Read repository instructions and relevant lessons. Propose the scope,
-   approach, checks, and a risk level using the selected executor.
+2. **Plan.** The implementer researches the code, repository instructions, and
+   relevant lessons, then proposes the scope, phases, checks, and a risk level.
+   The verifier reviews the plan and attaches its findings.
 3. **Approval.** A human approves the exact plan, risk level, and verification
    requirements.
-4. **Implement.** Work in the item's isolated checkout and checkpoint the session.
-5. **Verify.** Run required checks and a separate verification session. Record evidence.
+4. **Implement.** Work in the item's isolated checkout, one plan phase at a time,
+   and commit a checkpoint after each phase.
+5. **Verify.** The engine runs the required checks. The verifier, a different
+   executor, exercises the service and reviews the change. Record evidence.
 6. **Ready.** Present the change and evidence for review. Merge and deployment are
    separate actions.
+
+## Steps inside each stage
+
+The board shows six stages. The workflow runs more steps than that, and each step
+is run by an agent, by the engine, or by you.
+
+| Stage | Step | Run by |
+|---|---|---|
+| Intake | State the outcome and acceptance criteria | You |
+| | Create the work item and its checkout | Engine |
+| Plan | Research the code, rules, and lessons | Implementer |
+| | Write the plan: scope, phases, checks, risk level | Implementer |
+| | Review the plan | Verifier |
+| Approval | Approve, revise, or reject | You |
+| | Bind the plan, risk level, guide version, and check list | Engine |
+| Implement | Build one phase, self-check, commit a checkpoint | Implementer |
+| Verify | Format, lint, build, and required checks | Engine |
+| | Exercise the service, run hidden scenarios, review the diff | Verifier |
+| | Evaluate the evidence | Engine |
+| Ready | Review the evidence, then merge and deploy | You |
+
+The implementer is the executor the customer chose. The verifier is the other
+one. Engine steps are fixed code: an agent cannot run them or report their
+result. [Runtime](runtime.md) describes how the engine enforces this.
 
 ## Four loops
 
@@ -110,7 +137,8 @@ including plan approval. A scan does not edit product code.
 Definitions live in `workflows/`: `software-change` for the change loop and
 `post-deploy-observe` for the observe loop. Each run pins a version. `Task` dispatches an
 action, `Choice` routes a result, and terminal states end a run. Custom actions
-provide planning, approval waits, execution, verification, and repair.
+provide research, planning, plan review, approval waits, execution, checks,
+verification, and repair.
 
 [Read the proposed software-change workflow](../workflows/software-change.asl.json).
 This is a design example; no interpreter or hosted workflow service is included.
@@ -125,8 +153,10 @@ the work item's repair budget.
 
 ## Resume
 
-Persist structured state before and after actions. On restart, reconcile any
-in-flight operation, verify the checkout against its checkpoint, and resume the
-existing session when supported. Do not blindly repeat an action whose outcome
-is unknown. These runtime guarantees are proposed, not implemented in the mock UI.
+Each run keeps one append-only log, synced to disk before every agent call and
+every command. On restart the engine closes any step left open. A step where
+nothing had started is run again. A step whose agent call or command had started
+but not finished has an unknown outcome: the engine resets the checkout to the
+last checkpoint before running it again. It never continues on a half-changed
+checkout. [Runtime](runtime.md#recovery-after-a-crash) has the details. These runtime guarantees are proposed, not implemented in the mock UI.
 The mock UI also does not show risk levels, the observe loop, or maintenance scans.

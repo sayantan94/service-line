@@ -85,6 +85,15 @@ fixtures and local substitutes for mail, payment, application submission, and
 other external side effects. Record which dependencies were real or substituted.
 Missing required fixtures make the result inconclusive.
 
+## Hidden scenarios
+
+List flows and replays the implementer must not see. Keep their fixtures outside
+the product checkout. Only the verifier runs them.
+
+| ID | Location | What it establishes |
+|---|---|---|
+| HIDDEN-001 | `<path outside the checkout>` | `<behavior the implementer could otherwise build to the test>` |
+
 ## Required observations
 
 | Boundary | Capture | Assertion |
@@ -141,7 +150,7 @@ or a test that the tools did not actually produce.
 
 ## Gate and repair
 
-The verifier uses the selected executor in a separate session. It reads this
+The verifier is a different executor from the implementer, in its own session. It reads this
 file, the approved plan, repository instructions, diff, and actual tool results.
 It may exercise disposable application state; it does not edit the implementation
 under review.

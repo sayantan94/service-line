@@ -178,7 +178,7 @@
           <thead><tr><th scope="col">Part</th><th scope="col">Responsibility</th></tr></thead>
           <tbody>
             <tr><td>Check runner</td><td>Runs the approved commands on an isolated checkout. Records output, exit codes, test reports, and the exact revision.</td></tr>
-            <tr><td>Verification session</td><td>Uses the customer’s executor and the <code>verify</code> skill in a separate session. Exercises the test environment, reviews the diff and evidence, and leaves implementation files unchanged.</td></tr>
+            <tr><td>Verification session</td><td>Uses a different executor from the implementer, with the <code>verify</code> skills, in a separate session. Exercises the test environment, reviews the diff and evidence, and leaves implementation files unchanged.</td></tr>
             <tr><td>Workflow engine</td><td>Validates evidence and decides the next state. Required checks and reviews must all pass. An agent’s completion message cannot satisfy the gate.</td></tr>
           </tbody>
         </table>
@@ -254,6 +254,7 @@ verification:
         <li><strong>Retry and repair are separate.</strong> Execution failures use <code>Retry</code>/<code>Catch</code>. Failed checks route to repair through <code>Choice</code>.</li>
         <li><strong>Completion requires evidence.</strong> An agent finishing a turn does not establish that the work item is correct.</li>
         <li><strong>Risk sets the depth.</strong> Each plan states a low, medium, or high risk level, approved with the plan. It decides which checks and how much human review are required. Every level keeps plan approval.</li>
+        <li><strong>Agent steps and engine steps are separate.</strong> Research, planning, implementation, and review are agent steps inside limits the engine sets. Checks and the evidence gate are fixed engine code. Each run keeps one append-only log and recovers from it after a crash.</li>
         <li><strong>The line is one of four loops.</strong> A read-only observe run checks a change after a recorded deployment. A scheduled maintenance work item scans the repository and proposes work items. Learning turns past work into reviewed lessons.</li>
       </ul>
       <details>

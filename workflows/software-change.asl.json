@@ -6,13 +6,30 @@
       "Type": "Pass",
       "Result": 0,
       "ResultPath": "$.repairs",
+      "Next": "Research"
+    },
+    "Research": {
+      "Comment": "Agent step, read-only. The implementer maps the code, project rules, and lessons that apply.",
+      "Type": "Task",
+      "Resource": "service-line:agent.research",
+      "ResultPath": "$.research",
+      "TimeoutSeconds": 900,
       "Next": "Plan"
     },
     "Plan": {
-      "Comment": "The plan includes a risk level (low, medium, high) with reasons. Approval binds it.",
+      "Comment": "Agent step. The plan lists scope, phases, checks, and a risk level (low, medium, high) with reasons. Approval binds it.",
       "Type": "Task",
       "Resource": "service-line:agent.plan",
       "ResultPath": "$.plan",
+      "Next": "ReviewPlan",
+      "TimeoutSeconds": 900
+    },
+    "ReviewPlan": {
+      "Comment": "Agent step, read-only, run by the verifier. Findings are attached to the plan; the verifier cannot change it.",
+      "Type": "Task",
+      "Resource": "service-line:agent.review-plan",
+      "ResultPath": "$.planReview",
+      "TimeoutSeconds": 600,
       "Next": "AwaitApproval"
     },
     "AwaitApproval": {
@@ -38,6 +55,7 @@
       "Default": "Cancelled"
     },
     "Implement": {
+      "Comment": "Agent step. One plan phase at a time, with a checkpoint commit after each. Ends early on a guard: repeated call, no progress, or time limit.",
       "Type": "Task",
       "Resource": "service-line:agent.implement",
       "ResultPath": "$.implementation",
@@ -45,20 +63,22 @@
       "Next": "RunChecks"
     },
     "RunChecks": {
-      "Comment": "Runs the checks the service guide requires for the approved risk level.",
+      "Comment": "Engine step. Format, lint, build, and the checks the service guide requires for the approved risk level.",
       "Type": "Task",
       "Resource": "service-line:checks.run",
       "ResultPath": "$.checks",
       "Next": "Review"
     },
     "Review": {
+      "Comment": "Agent step, run by the verifier. Exercises the service, runs hidden scenarios, and reviews the diff. Cannot edit the code.",
       "Type": "Task",
       "Resource": "service-line:agent.verify",
       "ResultPath": "$.review",
-      "Next": "Evaluate"
+      "Next": "Evaluate",
+      "TimeoutSeconds": 1800
     },
     "Evaluate": {
-      "Comment": "Requires the human review assigned to the approved risk level before a pass.",
+      "Comment": "Engine step. Requires complete, current evidence and the human review assigned to the approved risk level before a pass.",
       "Type": "Task",
       "Resource": "service-line:verification.evaluate",
       "ResultPath": "$.verification",
@@ -89,6 +109,7 @@
       "Default": "NeedsAttention"
     },
     "Repair": {
+      "Comment": "Agent step. Finds the cause, repairs inside the approved scope, and returns a new snapshot. Old evidence is discarded.",
       "Type": "Task",
       "Resource": "service-line:repair.run",
       "ResultPath": "$",

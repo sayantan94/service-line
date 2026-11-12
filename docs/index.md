@@ -35,6 +35,7 @@ learns from past work. The prototype shows the line only.
 
 - [Primitives](primitives.md): the six objects and what each owns.
 - [Workflow](workflow.md): the four loops, risk levels, approval, repair, and resumption.
+- [Runtime](runtime.md): the run log, crash recovery, executors, step limits, and skills.
 - [Verification](verification.md): browser actions, replay, observations, gates, and
   post-deploy signals.
 - [Context and learning](context-and-learning.md): session memory and reusable lessons.
