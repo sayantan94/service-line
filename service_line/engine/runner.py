@@ -14,6 +14,7 @@ from ..policy import killswitch
 from ..store.events import RunLog, close_open
 from . import asl
 from .actions import REGISTRY, Halt, RunEnv, Waiting
+from .validate import CHANGES_CODE
 
 FAIL_STATUS = {"VerificationNeedsAttention": "needs_attention", "PlanNotApproved": "cancelled"}
 
@@ -75,7 +76,11 @@ class Runner:
             kind = state["Type"]
             if kind == "Succeed":
                 self.log.end("state", started, "completed")
-                self.log.append("run/end", {"status": "ready"})
+                unverified = self._unverified(ctx)
+                if unverified:
+                    self.log.append("run/end", {"status": "needs_attention", "cause": unverified})
+                else:
+                    self.log.append("run/end", {"status": "ready"})
             elif kind == "Fail":
                 self.log.end("state", started, "completed")
                 self.log.append("run/end", {"status": FAIL_STATUS.get(state.get("Error"), "failed"),
@@ -99,6 +104,19 @@ class Runner:
                     self.log.end("state", started, "failed", detail=f"{type(error).__name__}: {error}")
                     raise
                 self._finish(started, state, result)
+
+    def _unverified(self, ctx: dict[str, Any]) -> str:
+        """Why this run may not be called ready, or "" when it may. A workflow
+        that builds ends ready only on a passed verification of the current code,
+        whatever its routing says."""
+        if not any(s.get("Resource") in CHANGES_CODE for s in self.states.values()):
+            return ""
+        found = ctx.get("verification") or {}
+        if found.get("verdict") != "passed":
+            return f"verification did not pass ({found.get('verdict', 'never ran')}); the work cannot be ready"
+        if found.get("revision") != self.env.checkout.head():
+            return "verification passed on an older revision; the work cannot be ready"
+        return ""
 
     def _finish(self, started: int, state: dict[str, Any], result: Any) -> None:
         extra = {"set": {"path": state["ResultPath"], "value": result}} if "ResultPath" in state else {}

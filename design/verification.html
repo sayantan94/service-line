@@ -108,6 +108,7 @@
         <tr><td>Artifacts</td><td>A screenshot per step, console and network logs, command output, all hashed and kept per attempt. A pass on a criterion must point at one.</td><td>Command output built</td></tr>
         <tr><td>Verifier review</td><td>The other agent reads the diff, the artifacts and the hidden scenarios, and gives a verdict per criterion. It cannot edit the code.</td><td>Built</td></tr>
         <tr><td>Evidence gate</td><td>Passes only when every required check and the review passed on the current snapshot under the approved plan.</td><td>Built</td></tr>
+        <tr><td>After every build</td><td>The validator refuses a workflow where implement or repair can reach Ready, or another build, without checks, review and gate. The engine also refuses to end a building run as Ready unless verification passed on the current code.</td><td>Built</td></tr>
         <tr><td>Capture correction</td><td>After a rejection, a correction or a repair, proposes a check with an error message that names the real fix. You approve it before it joins the repository.</td><td>Designed</td></tr>
       </tbody>
     </table></div>

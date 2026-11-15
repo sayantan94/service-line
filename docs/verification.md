@@ -114,6 +114,19 @@ A line of advice in a rules file cannot be enforced and tends to be read as an
 excuse. A check fails the same way every time. Prefer the check, and prefer
 removing the cause in the code over either.
 
+## Verification runs after every build
+
+No build reaches Ready unverified. Two separate rules hold this, so a mistake in
+one is caught by the other.
+
+- **Before a workflow runs:** the validator refuses any workflow in which a step
+  that changes code (implement or repair) can reach Ready, or another build,
+  without the checks, the verifier's review and the evidence gate all running
+  after it.
+- **When a run ends:** the engine marks a building run Ready only if verification
+  passed on the exact code in the checkout. Anything else ends as Needs
+  attention, whatever the workflow's routing says.
+
 ## Accept or repair
 
 Evidence records the exact code snapshot, including uncommitted changes, plan and
@@ -144,6 +157,7 @@ expectation becomes a new work item; missing signals leave the change unconfirme
 | Guide commands run by the engine | Built |
 | Verifier review by the other agent, per criterion | Built |
 | Evidence gate and bounded repair | Built |
+| Verification enforced after every build, by the validator and at the end of a run | Built |
 | Hidden scenarios handed only to the verifier | Built |
 | Required checks resolved from risk and changed files (`verification/required.py`) | Next |
 | Browser and replay drivers, artifacts per attempt (`verification/drivers/`) | Then |

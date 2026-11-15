@@ -83,6 +83,18 @@ class LineTests(unittest.TestCase):
         self.assertEqual(self.go(agents), "ready")
         self.assertEqual(line.status(self.item)["ctx"]["repairs"], 1)
 
+    def test_a_workflow_that_routes_a_failed_build_to_ready_is_still_stopped(self):
+        import copy
+        from unittest import mock
+        loose = copy.deepcopy(line.definition_for(self.item))
+        loose["States"]["Route"]["Default"] = "Ready"
+        agents = self.agents(implement=write_answer(43), repair=[write_answer(44), write_answer(45), write_answer(46)])
+        with mock.patch.object(line, "definition_for", return_value=loose):
+            self.go(agents)
+            self.item.decide("approved")
+            self.assertEqual(self.go(agents), "needs_attention")
+            self.assertIn("verification", line.status(self.item)["detail"])
+
     def test_a_pass_without_a_verdict_on_every_criterion_does_not_count(self):
         agents = self.agents(review="Looks good to me.\nVERDICT: passed\n")
         self.go(agents)

@@ -63,6 +63,21 @@ class Validation(unittest.TestCase):
     def test_a_path_to_implementation_that_skips_approval_is_rejected(self):
         self.assertIn("approval", self.broken(lambda s, d: s["ReviewPlan"].update(Next="Implement")))
 
+    def test_a_build_that_skips_the_checks_is_rejected(self):
+        self.assertIn("verification", self.broken(lambda s, d: s["Implement"].update(Next="Review")))
+
+    def test_a_build_that_skips_the_verifier_is_rejected(self):
+        self.assertIn("verification", self.broken(lambda s, d: s["RunChecks"].update(Next="Evaluate")))
+
+    def test_a_build_that_skips_the_evidence_gate_is_rejected(self):
+        self.assertIn("verification", self.broken(lambda s, d: s["Review"].update(Next="Route")))
+
+    def test_a_build_that_goes_straight_to_ready_is_rejected(self):
+        self.assertIn("verification", self.broken(lambda s, d: s["Implement"].update(Next="Ready")))
+
+    def test_a_second_build_before_the_first_is_verified_is_rejected(self):
+        self.assertIn("verification", self.broken(lambda s, d: s["Implement"].update(Next="Repair")))
+
     def test_a_loop_with_no_limit_is_rejected(self):
         def unbounded(states, definition):
             states["Route"]["Choices"][1] = {"Variable": "$.verification.verdict", "StringEquals": "failed", "Next": "Repair"}

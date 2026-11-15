@@ -3,6 +3,8 @@
 A workflow is refused when:
   - a state names a successor or action that does not exist;
   - implementation or repair can be reached without passing a human approval;
+  - a build can reach Ready, or another build, without the checks, the
+    verifier's review and the evidence gate all running after it;
   - a loop has nothing that bounds it;
   - a state cannot reach an end.
 """
@@ -22,6 +24,8 @@ KNOWN_ACTIONS = {
     "service-line:deployment.wait", "service-line:agent.observe", "service-line:observation.evaluate",
     "service-line:workitem.propose",
 }
+VERIFICATION = {"service-line:checks.run": "the checks", "service-line:agent.verify": "the verifier's review",
+                "service-line:verification.evaluate": "the evidence gate"}
 WAITS_FOR_SOMETHING_OUTSIDE = {APPROVAL, "service-line:deployment.wait"}
 
 
@@ -65,6 +69,17 @@ def validate(definition: dict[str, Any]) -> None:
     for name in without_approval:
         if states[name].get("Resource") in CHANGES_CODE:
             raise WorkflowInvalid(f"{name} can be reached without a human approval")
+
+    # Verification runs after every build. From a state that changes code, no
+    # path may reach Ready or another build while skipping any part of it.
+    builds = {n for n, s in states.items() if s.get("Resource") in CHANGES_CODE}
+    for name in builds:
+        for action, part in VERIFICATION.items():
+            skipped = {n for n, s in states.items() if s.get("Resource") == action}
+            after = set().union(*(_reachable(states, t, skip=skipped) for t in asl.successors(states[name])))
+            for reached in after:
+                if states[reached]["Type"] == "Succeed" or reached in builds:
+                    raise WorkflowInvalid(f"{name} can reach {reached} without verification: {part} can be skipped")
 
     ends = {n for n, s in states.items() if s["Type"] in asl.TERMINAL}
     for name in _reachable(states, start):
