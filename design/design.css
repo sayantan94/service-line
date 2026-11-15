@@ -89,3 +89,4 @@ a{color:var(--accent);text-underline-offset:3px}
 .details a strong{font-weight:600}
 .details a span{color:var(--muted);font-size:13px}
 
+pre.tree{margin:0;overflow-x:auto;border:1px solid var(--line);border-radius:10px;background:var(--panel);padding:16px 18px;font:12.5px/1.65 var(--mono);color:var(--ink)}

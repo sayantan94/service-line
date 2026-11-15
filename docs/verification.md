@@ -71,6 +71,49 @@ level requires, and the engine resolves that list at approval.
 A service can require any check at a lower level. It cannot drop a check that the
 approved level requires. A check that could not run is missing evidence, not a pass.
 
+## Review evidence, not the diff
+
+At Ready you look at what verification captured: screenshots of each flow step,
+check output, the verifier's verdict per criterion. A verdict of pass on a
+criterion must point at an artifact. The diff is there if you want it, but the
+evidence is what you approve.
+
+## Feature map
+
+Each service keeps `.service-line/feature-map.md`: every feature under the name a
+user would call it, with where it is, how to reach it, and which flow covers it.
+The plan, the verifier and you then share one vocabulary, and no agent has to
+guess what "the panel on the left" means. The engine uses the map to pick the
+flows a diff touches.
+
+## Drivers
+
+A driver runs one kind of check and returns a result and its artifacts. The
+engine runs drivers; an agent does not. The same driver is reused on every run,
+so results are repeatable, cost no tokens, and the driver itself has tests.
+
+| Driver | Runs | Captures |
+|---|---|---|
+| **Commands** | The guide's required commands: tests, lint, build. | Output and exit code. |
+| **Browser** | The guide's flows in headless Chrome: open, click, type, submit, reload. | A screenshot per step, console and network logs. |
+| **Replay** | Recorded requests against an isolated backend. | Responses and side-effect counts. |
+| **Observations** | The logs and state the guide names. | The matching lines and values. |
+
+Property-based tests, model checking and state charts need no driver of their
+own. A service adds them as required commands when it wants them.
+
+## Corrections become checks
+
+When you reject a change, correct it, or a repair was needed, the engine proposes
+the check that would have caught the problem: a lint rule, a test, or a flow
+assertion, with an error message that names the real fix. Once you approve it,
+it is added to `.service-line/checks/` in the service repository and every later
+change must pass it.
+
+A line of advice in a rules file cannot be enforced and tends to be read as an
+excuse. A check fails the same way every time. Prefer the check, and prefer
+removing the cause in the code over either.
+
 ## Accept or repair
 
 Evidence records the exact code snapshot, including uncommitted changes, plan and
@@ -94,6 +137,19 @@ a deployment is recorded. It is read-only and uses its own session. Its evidence
 records the deployed revision and the observation window. A contradicted
 expectation becomes a new work item; missing signals leave the change unconfirmed.
 
-The current static prototype has no backend or replay fixtures. Its actual guide
-checks browser interactions and state isolation. Evidence displayed inside the
-mock UI is illustrative.
+## What is built
+
+| Piece | State |
+|---|---|
+| Guide commands run by the engine | Built |
+| Verifier review by the other agent, per criterion | Built |
+| Evidence gate and bounded repair | Built |
+| Hidden scenarios handed only to the verifier | Built |
+| Required checks resolved from risk and changed files (`verification/required.py`) | Next |
+| Browser and replay drivers, artifacts per attempt (`verification/drivers/`) | Then |
+| Feature map (`verification/featuremap.py`) | Then |
+| Corrections become checks (`verification/corrections.py`, `actions/capture.py`) | Then |
+| Evidence view at Ready in the UI | Last |
+
+The [verification design page](../design/verification.html) has the diagram and
+the folder layout.
